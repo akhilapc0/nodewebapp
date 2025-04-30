@@ -179,13 +179,13 @@
                       <p>or sign up with</p>
                     </div>
                     <div class="social-btns">
-                      <button type="button" class="btn btn-outline-danger">
+                      <a href="/auth/google" class="btn btn-outline-danger">
                         <img
                           src="img/googlesignup.png"
                           alt="Google Logo"
                           style="width: 24px; height: 24px"
                         />
-                      </button>
+                      </a>
                     </div>
                   </div>
                 </form>
@@ -221,124 +221,105 @@
         const signform=document.getElementById("signform");
         
         function nameValidateChecking(){
-
             const nameval=nameid.value;
-            const namepattern=/^[A-Za-z\s]+$/
+            const namepattern=/^[A-Za-z\s]+$/;
             if(nameval.trim()===""){
-            error1.style.display="block";
-            error1.innerHTML="please enter a valid name";
-            }else(!namepattern.test(nameval)){
                 error1.style.display="block";
-                error1.innerHTML="name can only contain albhabets and spaces";
-            }
-            else{
+                error1.innerHTML="Please enter a valid name";
+                return false;
+            }else if(!namepattern.test(nameval)){
+                error1.style.display="block";
+                error1.innerHTML="Name can only contain alphabets and spaces";
+                return false;
+            }else{
                 error1.style.display="none";
                 error1.innerHTML="";
+                return true;
             }
         }
 
-        function emailValidateChecking(e){
+        function emailValidateChecking(){
             const emailval=emailid.value;
             const emailpattern=/^([a-zA-Z0-9,_-]+)@([a-zA-Z0-9,-]+)\.([a-zA-Z]{2,4})$/;
             if(!emailpattern.test(emailval)){
                 error2.style.display="block";
-                error2.innerHTML="Invalid Format";
-
-            }
-            else{
+                error2.innerHTML="Invalid email format";
+                return false;
+            }else{
                 error2.style.display="none";
                 error2.innerHTML="";
+                return true;
             }
         }
-        function phoneValidateChecking(e){
 
+        function phoneValidateChecking(){
             const phoneval=phoneid.value;
-            if(phoneval.trim()==="")
-            error3.style.display="block";
-            error3.innerHTML="enter a valid phone number";
-            else if(phoneval.length>10 || phoneval.length<10){
+            if(phoneval.trim()===""){
                 error3.style.display="block";
-                error3.innerHTML="enter 10 digit";
-            }
-            else{
+                error3.innerHTML="Please enter a valid phone number";
+                return false;
+            }else if(phoneval.length!==10){
+                error3.style.display="block";
+                error3.innerHTML="Phone number must be 10 digits";
+                return false;
+            }else{
                 error3.style.display="none";
                 error3.innerHTML="";
+                return true;
             }
         }
 
-        function passValidateChecking(e){
+        function passValidateChecking(){
             const passval=passid.value;
             const cpassval=cpassid.value;
             const alpha=/^[a-zA-Z]/;
             const digit=/\d/;
+            let isValid = true;
 
             if(passval.length<8){
                 error4.style.display="block";
-                error4.innerHTML="should contain atleast 8 charaters";
+                error4.innerHTML="Password should contain at least 8 characters";
+                isValid = false;
             }else if(!alpha.test(passval) || !digit.test(passval)){
                 error4.style.display="block";
-                error4.innerHTML="should contain numbers and alphabets";
+                error4.innerHTML="Password should contain both letters and numbers";
+                isValid = false;
             }else{
                 error4.style.display="none";
                 error4.innerHTML="";
             }
+
             if(passval!==cpassval){
                 error5.style.display="block";
-                error5.innerHTML="passwords do not match";
-
+                error5.innerHTML="Passwords do not match";
+                isValid = false;
             }else{
                 error5.style.display="none";
                 error5.innerHTML="";
             }
+
+            return isValid;
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         document.addEventListener("DOMContentLoaded",function(){
             signform.addEventListener("submit",function(e){
-                nameValidateChecking();
-                emailValidateChecking();
-                phoneValidateChecking();
-                passValidateChecking();
+                const isNameValid = nameValidateChecking();
+                const isEmailValid = emailValidateChecking();
+                const isPhoneValid = phoneValidateChecking();
+                const isPassValid = passValidateChecking();
 
-                if(
-                    !nameid ||
-                    !emailid ||
-                    !phoneid ||
-                    !passid ||
-                    !error1 ||
-                    !error2 ||
-                    !error3 ||
-                    !error4 ||
-                    !error5 ||
-                    !signform
-                )
-                {
-                    console.error("one or more elements not found")
-                }
-                if(
-                    error1.innerHTML ||
-                    error2.innerHTML ||
-                    error3.innerHTML ||
-                    error4.innerHTML ||
-                    error5.innerHTML 
-                )
-                {
+                if(!isNameValid || !isEmailValid || !isPhoneValid || !isPassValid){
                     e.preventDefault();
                 }
-            })
-        })
+            });
+
+            // Add input event listeners for real-time validation
+            nameid.addEventListener("input", nameValidateChecking);
+            emailid.addEventListener("input", emailValidateChecking);
+            phoneid.addEventListener("input", phoneValidateChecking);
+            passid.addEventListener("input", passValidateChecking);
+            cpassid.addEventListener("input", passValidateChecking);
+        });
     </script>
   </body>
 </html>
