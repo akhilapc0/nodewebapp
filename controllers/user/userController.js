@@ -2,6 +2,7 @@ const user=require("../../models/userSchema");
 const env=require('dotenv').config();
 const nodemailer=require("nodemailer");
 const becrypt=require("bcrypt");
+const User = require("../../models/userSchema");
 const pageNotFound=async(req,res)=>{
     try{
           res.render("page-404")
@@ -24,7 +25,15 @@ const loadSignup=async(req,res)=>{
 
 const loadHomePage=async (req,res)=>{
     try{
-        res.render("home")
+        const user=req.session.user;
+        if(user){
+            const userData=await User.findOne({id:user._id})
+        
+        res.render("home",{user:userData})
+        }
+        else{
+            return res.render("home")
+        }
     }
     catch(error){
          console.log("home page not found");
@@ -204,7 +213,58 @@ const loadHomePage=async (req,res)=>{
         }
 
     }
+    const loadLogin=async (req,res)=>{
+        try{
+            if(!req.session.user){
+                return res.render("login");
+            }else{
+                res.redirect('/')
+            }
+        }
+        catch(error){
+            res.redirect("pageNotFound")
+        }
+    }
+    const login=async (req,res)=>{
+        try{
+            const{email,password}=req.body;
+            const findUser=await User.findOne({isAdmin:0,email:email});
+            if(!findUser){
+                return res.render ("login",{message:"user not found"})
+            }
+            if(findUser.isBlocked){
+                return res.render ("login",{message:"user is blocked by admin"})
+            }
+            const passwordMatch=await becrypt.compare(password,findUser.password);
+            if(!passwordMatch){
+                return res.render("login",{message:" incorrect password "});
+            }
+            req.session.user=findUser._id;
+            res.redirect('/')
+        }
+        catch(error){
+            console.error("login error",error);
+            res.rener("login",{message:"login failed please try again later"})
 
+        }
+    }
+    const logout=async(req,res)=>{
+        try{
+
+            req.session.destroy((err)=>{
+                if(err){
+                    console.log("session destruction error",err.message);
+                    return res.redirect("/pageNotFound")
+                }
+                return res.redirect("/login")
+
+            })
+        }
+        catch(error){
+            console.log("logout error",error);
+            res.redirect("/pageNotFound")
+        }
+    }
 
 module.exports={
     loadHomePage,
@@ -212,7 +272,10 @@ module.exports={
     loadSignup,
     signup,
     verifyOtp,
-    resendOtp
+    resendOtp,
+    loadLogin,
+    login,
+    logout
 }
 
 
