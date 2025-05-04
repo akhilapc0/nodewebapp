@@ -1,8 +1,8 @@
-const user=require("../../models/userSchema");
+const User=require("../../models/userSchema");
 const env=require('dotenv').config();
 const nodemailer=require("nodemailer");
-const becrypt=require("bcrypt");
-const User = require("../../models/userSchema");
+const bcrypt=require("bcrypt");
+
 const pageNotFound=async(req,res)=>{
     try{
           res.render("page-404")
@@ -26,9 +26,9 @@ const loadSignup=async(req,res)=>{
 const loadHomePage=async (req,res)=>{
     try{
         const user=req.session.user;
+       
         if(user){
-            const userData=await User.findOne({id:user._id})
-        
+            const userData = await User.findOne({ _id: user });
         res.render("home",{user:userData})
         }
         else{
@@ -40,6 +40,8 @@ const loadHomePage=async (req,res)=>{
          res.status(500).send("server error");
     }
 }
+
+
 
 // const signup=async(req,res)=>{
 //     try{
@@ -119,11 +121,11 @@ const loadHomePage=async (req,res)=>{
             console.log("dfsdfs")
             const{name,phone,email,password,cpassword}=req.body;
             if(password!==cpassword){
-                return res.render("signup",{message:"password do not match"});
+                return res.render("signup",{message:"passwords do not match"});
             }
-            const findUser=await user.findOne({email});
+            const findUser=await User.findOne({email});
             if(findUser){
-                return res.render("signup",{message:"user with this email alreday exist"})
+                return res.render("signup",{message:"User with this email alreday exist"})
             }
             const otp=generateOtp();
 
@@ -145,7 +147,7 @@ const loadHomePage=async (req,res)=>{
 
     const securePassword=async(password)=>{
         try{
-            const passwordHash=await becrypt.hash(password,10);
+            const passwordHash=await bcrypt.hash(password,10);
             return passwordHash
         }
         catch(error){
@@ -161,7 +163,8 @@ const loadHomePage=async (req,res)=>{
             if(otp===req.session.userOtp){
                 const userData=req.session.userData;
                 const passwordHash=await securePassword(userData.password);
-                const saveUserData=new user({
+
+                const saveUserData=new User({
                     name:userData.name,
                     email:userData.email,
                     phone:userData.phone,
@@ -169,6 +172,7 @@ const loadHomePage=async (req,res)=>{
 
                 })
                 await saveUserData.save();
+
                 req.session.user=saveUserData._id;
                 req.session.userOtp=null;
                 req.session.userData=null;
@@ -235,7 +239,7 @@ const loadHomePage=async (req,res)=>{
             if(findUser.isBlocked){
                 return res.render ("login",{message:"user is blocked by admin"})
             }
-            const passwordMatch=await becrypt.compare(password,findUser.password);
+            const passwordMatch=await bcrypt.compare(password,findUser.password);
             if(!passwordMatch){
                 return res.render("login",{message:" incorrect password "});
             }
@@ -244,7 +248,7 @@ const loadHomePage=async (req,res)=>{
         }
         catch(error){
             console.error("login error",error);
-            res.rener("login",{message:"login failed please try again later"})
+            res.render("login",{message:"login failed please try again later"})
 
         }
     }
