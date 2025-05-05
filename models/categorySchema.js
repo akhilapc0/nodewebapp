@@ -24,5 +24,5 @@ const categorySchema=new mongoose.Schema({
     }
 
 })
-const category=Mongoose.model("category",categorySchema);
+const category=mongoose.model("category",categorySchema);
 module.exports=category;
