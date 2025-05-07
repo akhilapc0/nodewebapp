@@ -36,10 +36,10 @@ const productSchema=new Schema({
         type:Number,
         default:true
     },
-    color:{
-        type:String,
-        required:true
-    },
+    // color:{
+    //     type:String,
+    //     required:true
+    // },
     productImage:{
         type:[String],
         required:true
@@ -53,10 +53,10 @@ const productSchema=new Schema({
         type:String,
         enum:["Available","out of stock","Discountiued"],
         required:true,
-        deafault:"Available"
+        default:"Available"
     }
 
-},{timestamps=true})
+},{timestamps:true})
 
 const product=mongoose.model("product",productSchema);
 module.exports=product;

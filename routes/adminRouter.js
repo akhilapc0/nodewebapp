@@ -3,6 +3,12 @@ const router=express.Router();
 const adminController=require("../controllers/admin/adminController");
 const customerController=require("../controllers/admin/customerController");
 const categoryController=require("../controllers/admin/categoryController");
+const brandController=require("../controllers/admin/brandController");
+const productController=require("../controllers/admin/productController");
+const multer=require('multer');
+const storage=require('../helpers/multer');
+const uploads=multer({storage:storage});
+
 
 const {userAuth,adminAuth}=require("../middlewares/auth");
 
@@ -20,7 +26,20 @@ router.post("/addCategory",adminAuth,categoryController.addCategory);
 router.get("/listCategory",adminAuth,categoryController.getListCategory);
 router.get("/unlistCategory",adminAuth,categoryController.getUnlistCategory);
 router.get("/editCategory",adminAuth,categoryController.getEditCategory);
-router.post("/edit-category/:id",adminAuth,categoryController.editCategory)
+router.post("/edit-category/:id",adminAuth,categoryController.editCategory);
+router.get("/brands",adminAuth,brandController.getBrandPage);
+router.post("/addBrand",adminAuth,uploads.single("image"),brandController.addBrand);
+router.get("/blockBrand",adminAuth,brandController.blockBrand);
+router.get("/unBlockBrand",adminAuth,brandController.unBlockBrand);
+router.get("/deleteBrand",adminAuth,brandController.deleteBrand);
+
+//product management
+router.get("/addProducts",adminAuth,productController.getProductAddPage);
+router.post("/addProducts",adminAuth,uploads.array("images",4),productController.addProducts);
+router.get('/products',adminAuth,productController.getAllProducts);
+
+
+
 
 
 
