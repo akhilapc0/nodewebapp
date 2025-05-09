@@ -11,7 +11,8 @@ const productSchema=new Schema({
         required:true
     },
     brand:{
-        type:String,
+        type:Schema.Types.ObjectId,
+        ref:"Brand",
         required:true
     },
     category:{
@@ -34,7 +35,7 @@ const productSchema=new Schema({
     },
     quantity:{
         type:Number,
-        default:true
+        default:0
     },
     // color:{
     //     type:String,
@@ -46,14 +47,17 @@ const productSchema=new Schema({
     },
     isBlocked:{
         type:Boolean,
-        deafault:false
-
+        default:false
     },
     status:{
         type:String,
         enum:["Available","out of stock","Discountiued"],
         required:true,
         default:"Available"
+    },
+    createdOn:{
+        type:Date,
+        default:Date.now
     }
 
 },{timestamps:true})

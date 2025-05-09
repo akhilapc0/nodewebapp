@@ -75,18 +75,33 @@ const unBlockBrand=async(req,res)=>{
 
 const deleteBrand=async(req,res)=>{
     try{
-
-        const{id}=req.query;
+        const id = req.query.id;
         if(!id){
-            return res.status(400).redirect("/pageerror")
+            return res.status(400).json({ success: false, message: "Brand ID is required" });
         }
-        await Brand.deleteOne({id:id});
-        res.redirect("/admin/brands")
-    }
-    catch(error){
-        console.error("Error deleting brand :",error);
-        res.status(500).redirect("/pageerror")
 
+        // Check if brand exists
+        const brand = await Brand.findById(id);
+        if(!brand) {
+            return res.status(404).json({ success: false, message: "Brand not found" });
+        }
+
+        // Check if brand is used in any products
+        const productsWithBrand = await product.find({ brand: brand.brandName });
+        if(productsWithBrand.length > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Cannot delete brand as it is associated with products" 
+            });
+        }
+
+        // Delete the brand
+        await Brand.findByIdAndDelete(id);
+        res.json({ success: true, message: "Brand deleted successfully" });
+
+    } catch(error) {
+        console.error("Error deleting brand:", error);
+        res.status(500).json({ success: false, message: "Error deleting brand" });
     }
 }
 
@@ -96,5 +111,4 @@ module.exports={
     blockBrand,
     unBlockBrand,
     deleteBrand
-
 }

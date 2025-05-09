@@ -23,6 +23,43 @@
   .error-message {
     color: red;
   }
+
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+
+  .toast {
+    background: white;
+    border-radius: 4px;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 300px;
+  }
+
+  .toast.success {
+    border-left: 4px solid #28a745;
+  }
+
+  .toast.error {
+    border-left: 4px solid #dc3545;
+  }
+
+  .toast-message {
+    margin-right: 10px;
+  }
+
+  .toast-close {
+    cursor: pointer;
+    font-size: 20px;
+    color: #666;
+  }
 </style>
 <section class="content-main">
   <div class="content-header">
@@ -42,12 +79,13 @@
                 name="name"
                 placeholder="Type here"
                 class="form-control"
+                required
               />
             </div>
             <label for="product_name" class="form-label">Brand Image</label>
             <div class="input-upload">
               <img src="" alt=""/>
-              <input class="form-control border" name="image" type="file" />
+              <input class="form-control border" name="image" type="file" required />
             </div>
             <div class="d-grid">
               <button class="btn btn-primary mt-20" type="submit">
@@ -69,7 +107,7 @@
               </thead>
               <tbody>
                 <%data.reverse().forEach((brand,index)=>{%>
-                <tr>
+                <tr id="brand-row-<%=brand._id%>">
                   <td class="text-start"><%=brand.brandName%></td>
                   <td class="text-start">
                     <div
@@ -118,9 +156,9 @@
                     <button
                       class="btn btn-danger"
                       style="width: 90px"
-                      onclick="return confirmDelete()"
+                      onclick="deleteBrand('<%=brand._id%>')"
                     >
-                      <a href="/admin/deleteBrand?id=<%=brand._id%>" class="text-white">Delete</a>
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -133,11 +171,61 @@
     </div>
   </div>
   <div class="pagination-container">
-</div>
+  </div>
 </section>
+
+<!-- Toast Container -->
+<div class="toast-container"></div>
+
 <script>
-  function confirmDelete(){
-    return confirm("are you sure you want to delete this brand ?")
+  function showToast(message, type = 'success') {
+    const toastContainer = document.querySelector('.toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <div class="toast-message">${message}</div>
+      <div class="toast-close">&times;</div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Add click event to close button
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+      toast.remove();
+    });
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  }
+
+  function deleteBrand(brandId) {
+    if (confirm('Are you sure you want to delete this brand?')) {
+      fetch(`/admin/deleteBrand?id=${brandId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Remove the row from the table
+          const row = document.getElementById(`brand-row-${brandId}`);
+          if (row) {
+            row.remove();
+          }
+          showToast(data.message, 'success');
+        } else {
+          showToast(data.message, 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while deleting the brand', 'error');
+      });
+    }
   }
 </script>
 <%- include("../../views/partials/admin/footer") %>

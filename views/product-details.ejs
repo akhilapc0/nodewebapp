@@ -1,0 +1,101 @@
+<%- include("partials/user/header") %>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="product-images">
+                <% if (product.productImage && product.productImage.length > 0) { %>
+                    <div class="main-image">
+                        <img src="/uploads/product-images/<%= product.productImage[0] %>" 
+                             alt="<%= product.productName %>"
+                             class="img-fluid"
+                             style="max-height: 400px; object-fit: contain;">
+                    </div>
+                    <% if (product.productImage.length > 1) { %>
+                        <div class="thumbnail-images mt-3">
+                            <% product.productImage.forEach((image, index) => { %>
+                                <img src="/uploads/product-images/<%= image %>" 
+                                     alt="<%= product.productName %> - Image <%= index + 1 %>"
+                                     class="img-thumbnail"
+                                     style="width: 80px; height: 80px; object-fit: cover; margin-right: 10px; cursor: pointer;"
+                                     onclick="changeMainImage(this.src)">
+                            <% }); %>
+                        </div>
+                    <% } %>
+                <% } else { %>
+                    <img src="/img/placeholder.jpg" 
+                         alt="<%= product.productName %>"
+                         class="img-fluid"
+                         style="max-height: 400px; object-fit: contain;">
+                <% } %>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="product-info">
+                <h1 class="mb-3"><%= product.productName %></h1>
+                <p class="text-muted mb-2">Category: <%= product.category.name %></p>
+                <% if (product.brand) { %>
+                    <p class="text-muted mb-2">Brand: <%= product.brand.name %></p>
+                <% } %>
+                <div class="price-section mb-3">
+                    <h3 class="text-primary">₹<%= product.salesPrice %></h3>
+                    <% if (product.regularPrice > product.salesPrice) { %>
+                        <span class="text-muted text-decoration-line-through">₹<%= product.regularPrice %></span>
+                        <span class="badge bg-success ms-2">
+                            <%= Math.round(((product.regularPrice - product.salesPrice) / product.regularPrice) * 100) %>% OFF
+                        </span>
+                    <% } %>
+                </div>
+                <div class="description-section">
+                    <h4>Description</h4>
+                    <p><%= product.description %></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.product-images {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.main-image {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.thumbnail-images {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.product-info {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.price-section {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.description-section {
+    margin-top: 20px;
+}
+</style>
+
+<script>
+function changeMainImage(src) {
+    document.querySelector('.main-image img').src = src;
+}
+</script>
+
+<%- include("partials/user/footer") %> 

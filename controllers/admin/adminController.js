@@ -1,6 +1,9 @@
 const User=require("../../models/userSchema");
 const mongoose=require('mongoose');
 const bcrypt=require('bcrypt');
+const Product = require("../../models/productSchema");
+const Category = require("../../models/categorySchema");
+const Brand = require("../../models/brandSchema");
 
 
 const pageerror=async (req,res)=>{
@@ -46,12 +49,12 @@ const login=async (req,res)=>{
 }
 
 
-const loadDashboard=async (req,res)=>{
-    if(req.session.admin){
-        try{
+const loadDashboard = async (req, res) => {
+    if (req.session.admin) {
+        try {
             res.render("dashboard")
         }
-        catch(error){
+        catch (error) {
             res.redirect("/pageerror")
         }
     }
