@@ -10,7 +10,7 @@ const storage=require('../helpers/multer');
 const uploads=multer({storage:storage});
 
 
-const {userAuth,adminAuth}=require("../middlewares/auth");
+const {userAuth,adminAuth}=require("../middleware/auth");
 
 
 router.get("/pageerror",adminController.pageerror);

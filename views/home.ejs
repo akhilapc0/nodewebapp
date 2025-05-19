@@ -1,0 +1,151 @@
+<%- include("partials/user/header") %>
+
+<!-- Hero Section -->
+<section class="hero-section" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/img/coverimg.png'); background-size: cover; background-position: center; height: 80vh; display: flex; align-items: center; justify-content: center; text-align: center; color: white;">
+    <div class="container">
+        <h1 class="display-1 fw-bold mb-4" style="font-family: 'Playfair Display', serif;">Essence Elegance</h1>
+        <p class="lead mb-4" style="font-size: 1.5rem;">Discover the art of fragrance</p>
+        <a href="/shop" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 30px; text-transform: uppercase; letter-spacing: 2px;">Shop Now</a>
+    </div>
+</section>
+
+<!-- Featured Categories -->
+<section class="categories-section py-5">
+    <div class="container">
+        <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif;">Explore Our Collections</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="category-card" style="position: relative; overflow: hidden; border-radius: 10px;">
+                    <img src="/img/women.png" alt="Women's Collection" class="img-fluid" style="width: 100%; height: 400px; object-fit: cover;">
+                    <div class="category-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); padding: 20px; color: white;">
+                        <h3>Women's Collection</h3>
+                        <p>Elegant and sophisticated fragrances</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="category-card" style="position: relative; overflow: hidden; border-radius: 10px;">
+                    <img src="/img/men.png" alt="Men's Collection" class="img-fluid" style="width: 100%; height: 400px; object-fit: cover;">
+                    <div class="category-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); padding: 20px; color: white;">
+                        <h3>Men's Collection</h3>
+                        <p>Bold and distinctive scents</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="category-card" style="position: relative; overflow: hidden; border-radius: 10px;">
+                    <img src="/img/unisex.png" alt="Unisex Collection" class="img-fluid" style="width: 100%; height: 400px; object-fit: cover;">
+                    <div class="category-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); padding: 20px; color: white;">
+                        <h3>Unisex Collection</h3>
+                        <p>Versatile and unique fragrances</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- New Arrivals -->
+<section class="new-arrivals py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif;">New Arrivals</h2>
+        <div class="row g-4">
+            <% products.forEach(product => { %>
+                <div class="col-md-3">
+                    <div class="product-card" style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div class="product-image" style="position: relative; padding-top: 100%;">
+                            <img src="/uploads/re-image/<%= product.productImage[0] %>" alt="<%= product.productName %>" 
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div class="product-info p-3">
+                            <h5 class="mb-2" style="font-family: 'Playfair Display', serif;"><%= product.productName %></h5>
+                            <p class="text-muted mb-2"><%= product.brand.brandName %></p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0">₹<%= product.salesPrice %></span>
+                                <a href="/productDetails?id=<%= product._id %>" class="btn btn-outline-dark btn-sm">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="feature-card text-center p-4">
+                    <i class="fas fa-truck fa-2x mb-3" style="color: #6c757d;"></i>
+                    <h5>Free Shipping</h5>
+                    <p class="text-muted">On orders over ₹5000</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card text-center p-4">
+                    <i class="fas fa-undo fa-2x mb-3" style="color: #6c757d;"></i>
+                    <h5>Easy Returns</h5>
+                    <p class="text-muted">30 days return policy</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card text-center p-4">
+                    <i class="fas fa-lock fa-2x mb-3" style="color: #6c757d;"></i>
+                    <h5>Secure Payment</h5>
+                    <p class="text-muted">100% secure checkout</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card text-center p-4">
+                    <i class="fas fa-headset fa-2x mb-3" style="color: #6c757d;"></i>
+                    <h5>24/7 Support</h5>
+                    <p class="text-muted">Dedicated support team</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="newsletter-section py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 text-center">
+                <h3 class="mb-4" style="font-family: 'Playfair Display', serif;">Join Our Newsletter</h3>
+                <p class="mb-4">Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.</p>
+                <form class="d-flex gap-2 justify-content-center">
+                    <input type="email" class="form-control" placeholder="Your email address" style="max-width: 300px;">
+                    <button type="submit" class="btn btn-dark">Subscribe</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .category-card:hover img {
+        transform: scale(1.05);
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+
+<%- include("partials/user/footer") %> 

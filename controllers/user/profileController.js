@@ -1,8 +1,11 @@
-const User=require("../../models/userSchema");
+const User= require("../../models/userSchema");
+const Address=require('../../models/addressSchema');
 const nodemailer=require('nodemailer');
 const bcrypt=require('bcrypt');
 const env=require('dotenv').config();
 const session=require('express-session');
+const fs = require('fs');
+const path = require('path');
 
 function generateOtp(){
     const digits="1234567890";
@@ -191,12 +194,473 @@ const postNewPassword=async(req,res)=>{
 }
 
 
+const userProfile = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        if (!userId) {
+            return res.redirect('/login');
+        }
+
+        const userData = await User.findById(userId);
+        if (!userData) {
+            return res.redirect('/login');
+        }
+
+        // Check if profile image file exists
+        if (userData.profileImage && userData.profileImage !== 'default-profile.png') {
+            const imagePath = path.join(__dirname, '../../public/uploads/profile/', userData.profileImage);
+            if (!fs.existsSync(imagePath)) {
+                userData.profileImage = 'default-profile.png';
+            }
+        }
+
+        const addressData = await Address.findOne({ userId: userId });
+        
+        res.render("profile", {
+            user: userData,
+            userAddress: addressData || null,
+            message: null
+        });
+    } catch (error) {
+        console.error("Error retrieving profile data:", error);
+        res.render("profile", {
+            user: null,
+            userAddress: null,
+            message: "Error loading profile data. Please try again."
+        });
+    }
+}
+
+
+const changeEmail=async (req,res)=>{
+    try{
+        res.render("change-email", { message: null });
+    }
+    catch(error){
+        res.redirect("/pageNotFound")
+    }
+}
+
+
+
+const changeEmailValid=async(req,res)=>{
+    try{
+        const {email}=req.body;
+        const userExists=await User.findOne({email});
+        if(userExists){
+            const otp=generateOtp();
+            const emailSent=await sendVerificationEmail(email,otp);
+            if(emailSent){
+                req.session.userOtp=otp;
+                req.session.userData=req.body;
+                req.session.email=email;
+                res.render("change-email-otp", { message: null });
+                console.log("Email sent:",email);
+                console.log("OTP:",otp);
+
+            }else
+            {
+                res.render("change-email-otp", { message: "Failed to send OTP. Please try again." });
+            }
+        }else{
+            res.render("change-email",{
+                message:"User with this email not exists"
+            });
+
+        }
+    }
+    catch(error){
+        console.error("Error in changeEmailValid:", error);
+        res.redirect("/pageNotFound")
+    }
+}
+
+
+const verifyEmailOtp=async(req,res)=>{
+    try{
+        const enteredOtp=req.body.otp;
+        if(enteredOtp===req.session.userOtp){
+            //req.session.userData=req.body.userData;
+            res.render("new-email",{
+                userData:req.session.userData,
+
+            })
+        }else{
+            res.render("change-email-otp",{
+                message:"OTP not matching",
+                userData:req.session.userData
+            })
+
+        }
+
+    }
+    catch(error){
+        console.log("error in the verificationEmailOtp:",error)
+        res.redirect("/pageNotFound")
+
+    }
+}
+const updateEmail=async(req,res)=>{
+    try{
+        const newEmail=req.body.newEmail;
+        const userId=req.session.user;
+        console.log('updateEmail called. newEmail:', newEmail, 'userId:', userId);
+        if (!newEmail || !userId) {
+            return res.render('new-email', { userData: req.session.userData, message: 'Missing new email or user session.' });
+        }
+        await User.findByIdAndUpdate(userId,{email:newEmail});
+        res.redirect("/profile")
+    }
+    catch(error){
+        console.error("error updating email:",error)
+        res.render('new-email', { userData: req.session.userData, message: 'Error updating email. Please try again.' });
+    }
+}
+
+
+const changePassword=async(req,res)=>{
+
+    try{
+        res.render("change-password")
+
+    }
+    catch(error){
+
+        res.redirect("/pageNotFound")
+
+    }
+
+
+}
+const changePasswordValid=async(req,res)=>{
+    try{
+        const {email}=req.body;
+        const userExists=await User.findOne({email});
+        if(userExists){
+            const otp=generateOtp();
+            const emailSent=await sendVerificationEmail(email,otp);
+            if(emailSent){
+                req.session.userOtp=otp;
+                req.session.userData=req.body;
+                req.session.email=email;
+                res.render("change-password-otp");
+                console.log('OTP:',otp)
+            }
+            else{
+                res.json({
+                    success:false,
+                    message:"failed to send OTP.please try again"
+                })
+            }
+        }else{
+            res.render("change-password",{
+                message:"user with this email does not exist"
+            });
+
+        }
+
+    }
+    catch(error){
+
+      console.log("error in change password validation",error)
+      res.redirect("/pageNotFound")
+      
+
+
+    }
+}
+
+const verifyChangePassOtp = async (req, res) => {
+    try {
+        const enteredOtp = req.body.otp;
+        if (enteredOtp === req.session.userOtp) {
+            res.json({ success: true, redirectUrl: "/reset-password" });
+        } else {
+            res.json({ success: false, message: "Invalid OTP. Please try again." });
+        }
+    } catch (error) {
+        console.error("Error in verifyChangePassOtp:", error);
+        res.status(500).json({ success: false, message: "An error occurred. Please try again later." });
+    }
+}
+
+const resendChangePassOtp = async (req, res) => {
+    try {
+        const email = req.session.email;
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Email not found in session" });
+        }
+
+        const otp = generateOtp();
+        const emailSent = await sendVerificationEmail(email, otp);
+        
+        if (emailSent) {
+            req.session.userOtp = otp;
+            console.log("Resend OTP:", otp);
+            res.status(200).json({ success: true, message: "OTP resent successfully" });
+        } else {
+            res.status(500).json({ success: false, message: "Failed to send OTP. Please try again." });
+        }
+    } catch (error) {
+        console.error("Error in resendChangePassOtp:", error);
+        res.status(500).json({ success: false, message: "Internal server error. Please try again." });
+    }
+}
+
+const addAddress = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const userData = await User.findById(userId);
+        res.render("add-address", { 
+            user: userData,
+            message: null
+        });
+    } catch (error) {
+        console.error("Error in addAddress:", error);
+        res.redirect("/pageNotFound");
+    }
+};
+
+const postAddAddress = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const { addressType, name, city, landMark, state, pincode, phone, altPhone } = req.body;
+        
+        
+        if (!addressType || !name || !city || !state || !pincode || !phone) {
+            return res.render("add-address", {
+                user: req.session.user,
+                message: "Please fill in all required fields"
+            });
+        }
+
+        const userAddress = await Address.findOne({ userId });
+        
+        if (!userAddress) {
+    
+            const newAddress = new Address({
+                userId,
+                address: [{
+                    addressType,
+                    name,
+                    city,
+                    landMark,
+                    state,
+                    pincode,
+                    phone,
+                    altPhone
+                }]
+            });
+            await newAddress.save();
+        } else {
+            
+            userAddress.address.push({
+                addressType,
+                name,
+                city,
+                landMark,
+                state,
+                pincode,
+                phone,
+                altPhone
+            });
+            await userAddress.save();
+        }
+        
+        res.redirect("/profile");
+    } catch (error) {
+        console.error("Error in postAddAddress:", error);
+        res.render("add-address", {
+            user: req.session.user,
+            message: "Error adding address. Please try again."
+        });
+    }
+};
+
+const editAddress = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const addressId = req.params.id;
+        
+        const userAddress = await Address.findOne({ userId });
+        if (!userAddress) {
+            return res.redirect("/profile");
+        }
+
+        const address = userAddress.address.id(addressId);
+        if (!address) {
+            return res.redirect("/profile");
+        }
+
+        res.render("edit-address", {
+            user: req.session.user,
+            address: address,
+            message: null
+        });
+    } catch (error) {
+        console.error("Error in editAddress:", error);
+        res.redirect("/profile");
+    }
+};
+
+const updateAddress = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const addressId = req.params.id;
+        const { addressType, name, city, landMark, state, pincode, phone, altPhone } = req.body;
+
+        
+        if (!addressType || !name || !city || !state || !pincode || !phone) {
+            return res.render("edit-address", {
+                user: req.session.user,
+                address: req.body,
+                message: "Please fill in all required fields"
+            });
+        }
+
+        const userAddress = await Address.findOne({ userId });
+        if (!userAddress) {
+            return res.redirect("/profile");
+        }
+
+        
+        const address = userAddress.address.id(addressId);
+        if (!address) {
+            return res.redirect("/profile");
+        }
+
+        
+        address.addressType = addressType;
+        address.name = name;
+        address.city = city;
+        address.landMark = landMark;
+        address.state = state;
+        address.pincode = pincode;
+        address.phone = phone;
+        address.altPhone = altPhone;
+
+        await userAddress.save();
+        res.redirect("/profile");
+    } catch (error) {
+        console.error("Error in updateAddress:", error);
+        res.render("edit-address", {
+            user: req.session.user,
+            address: req.body,
+            message: "Error updating address. Please try again."
+        });
+    }
+};
+
+const deleteAddress = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const addressId = req.params.id;
+
+        const userAddress = await Address.findOne({ userId });
+        if (!userAddress) {
+            return res.status(404).json({ success: false, message: "Address not found" });
+        }
+
+
+        userAddress.address = userAddress.address.filter(addr => addr._id.toString() !== addressId);
+        await userAddress.save();
+
+        res.json({ success: true, message: "Address deleted successfully" });
+    } catch (error) {
+        console.error("Error in deleteAddress:", error);
+        res.status(500).json({ success: false, message: "Error deleting address" });
+    }
+};
+
+const updateProfileImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No image file provided' });
+        }
+
+        const userId = req.session.user;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Update profile image
+        user.profileImage = req.file.filename;
+        await user.save();
+
+        res.redirect('/profile');
+    } catch (error) {
+        console.error('Error updating profile image:', error);
+        res.status(500).json({ success: false, message: 'Error updating profile image' });
+    }
+};
+
+
+const getEditProfile = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const user = await User.findById(userId);
+        if (!user) return res.redirect('/login');
+        res.render('edit-profile', { user, message: null });
+    } catch (error) {
+        res.render('error', { message: 'Error loading edit profile page.' });
+    }
+};
+
+
+const postEditProfile = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const { name, email, phone } = req.body;
+        const updateData = { name, email, phone };
+
+        if (req.file) {
+            updateData.profileImage = req.file.filename;
+        }
+
+        // Check if the new email is already used by another user
+        const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+        if (existingUser) {
+            const user = await User.findById(userId);
+            return res.render('edit-profile', { user, message: 'Email is already in use by another account.' });
+        }
+
+        await User.findByIdAndUpdate(userId, updateData);
+        res.redirect('/profile');
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        const user = await User.findById(req.session.user);
+        res.render('edit-profile', { user, message: 'Error updating profile. Please try again.' });
+    }
+};
+
 module.exports={
     getForgotPassPage,
     forgotEmailValid,
     verifyForgotPassOtp,
     getResetPassPage,
     resendOtp,
-    postNewPassword
-
+    postNewPassword,
+    userProfile,
+    changeEmail,
+    changeEmailValid,
+    verifyEmailOtp,
+    updateEmail,
+    changePassword,
+    changePasswordValid,
+    verifyChangePassOtp,
+    resendChangePassOtp,
+    addAddress,
+    postAddAddress,
+    editAddress,
+    updateAddress,
+    deleteAddress,
+    updateProfileImage,
+    getEditProfile,
+    postEditProfile
 }
+
+
+
+

@@ -17,17 +17,24 @@
                      <div class="row mb-50">
                          <div class="col-md-6 col-sm-12 col-xs-12">
                              <div class="detail-gallery">
-                                 <span class="zoom-icon"><i class="fi-rs-search"></i></span>
                                  <div class="product-image-slider">
                                      <% if (product.productImage && product.productImage.length > 0) { %>
                                          <% product.productImage.forEach((image, index) => { %>
                                              <figure class="border-radius-10">
-                                                 <img src="/uploads/re-image/<%= image %>" alt="product image">
+                                                 <div class="zoom-container">
+                                                     <img src="/uploads/re-image/<%= image %>" alt="product image" class="zoom-img">
+                                                     <div class="zoom-lens"></div>
+                                                     <div class="zoom-result"></div>
+                                                 </div>
                                              </figure>
                                          <% }); %>
                                      <% } else { %>
                                          <figure class="border-radius-10">
-                                             <img src="/img/placeholder.jpg" alt="product image">
+                                             <div class="zoom-container">
+                                                 <img src="/img/placeholder.jpg" alt="product image" class="zoom-img">
+                                                 <div class="zoom-lens"></div>
+                                                 <div class="zoom-result"></div>
+                                             </div>
                                          </figure>
                                      <% } %>
                                  </div>
@@ -47,7 +54,7 @@
                                  <h2 class="title-detail"><%= product.productName %></h2>
                                  <div class="product-detail-rating">
                                      <div class="pro-details-brand">
-                                         <span> Brand: <a href="#"><%= product.brand ? product.brand.name : 'N/A' %></a></span>
+                                         <span> Brand: <a href="#"><%= product.brand ? product.brand.brandName : 'N/A' %></a></span>
                                      </div>
                                      <div class="product-rate-cover text-end">
                                          <div class="product-rate d-inline-block">
@@ -87,8 +94,12 @@
                                          <a href="#" class="qty-up" onclick="incrementQuantity()"><i class="fi-rs-angle-small-up"></i></a>
                                      </div>
                                      <div class="product-extra-link2">
-                                         <button type="submit" class="button button-add-to-cart" onclick="addToCart('<%= product._id %>')">Add to cart</button>
-                                         <a aria-label="Add To Wishlist" class="action-btn hover-up" href="#" onclick="addToWishlist('<%= product._id %>')"><i class="fi-rs-heart"></i></a>
+                                         <% if (user) { %>
+                                             <button type="submit" class="button button-add-to-cart" onclick="addToCart('<%= product._id %>')">Add to cart</button>
+                                             <a aria-label="Add To Wishlist" class="action-btn hover-up" href="#" onclick="addToWishlist('<%= product._id %>')"><i class="fi-rs-heart"></i></a>
+                                         <% } else { %>
+                                             <a href="/login" class="button button-add-to-cart">Login to Add to Cart</a>
+                                         <% } %>
                                      </div>
                                  </div>
                                  <ul class="product-meta font-xs color-grey mt-50">
@@ -109,6 +120,55 @@
      </div>
  </section>
 </main>
+
+<style>
+.zoom-container {
+    position: relative;
+    overflow: hidden;
+    cursor: zoom-in;
+}
+
+.zoom-img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.zoom-lens {
+    position: absolute;
+    border: 2px solid #d4d4d4;
+    width: 100px;
+    height: 100px;
+    cursor: none;
+    display: none;
+    background-color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+}
+
+.zoom-result {
+    position: fixed;
+    border: 1px solid #d4d4d4;
+    width: 400px;
+    height: 400px;
+    display: none;
+    z-index: 999;
+    background-repeat: no-repeat;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    pointer-events: none;
+}
+
+.product-image-slider figure {
+    position: relative;
+    overflow: hidden;
+}
+
+.product-image-slider img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+</style>
 
 <script>
 function incrementQuantity() {
@@ -175,6 +235,78 @@ function addToWishlist(productId) {
         alert('Error adding product to wishlist');
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const containers = document.querySelectorAll('.zoom-container');
+    
+    containers.forEach(container => {
+        const img = container.querySelector('.zoom-img');
+        const lens = container.querySelector('.zoom-lens');
+        const result = container.querySelector('.zoom-result');
+        
+        function initZoom() {
+            let isZooming = false;
+            
+            container.addEventListener('mouseenter', function() {
+                isZooming = true;
+                lens.style.display = 'block';
+                result.style.display = 'block';
+            });
+            
+            container.addEventListener('mouseleave', function() {
+                isZooming = false;
+                lens.style.display = 'none';
+                result.style.display = 'none';
+            });
+            
+            container.addEventListener('mousemove', function(e) {
+                if (!isZooming) return;
+                
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Position lens
+                let lensX = x - lens.offsetWidth / 2;
+                let lensY = y - lens.offsetHeight / 2;
+                
+                // Keep lens within bounds
+                lensX = Math.max(0, Math.min(lensX, rect.width - lens.offsetWidth));
+                lensY = Math.max(0, Math.min(lensY, rect.height - lens.offsetHeight));
+                
+                lens.style.left = lensX + 'px';
+                lens.style.top = lensY + 'px';
+                
+                // Calculate zoom
+                const cx = result.offsetWidth / lens.offsetWidth;
+                const cy = result.offsetHeight / lens.offsetHeight;
+                
+                // Position result
+                const resultX = e.clientX + 20;
+                const resultY = e.clientY + 20;
+                
+                // Keep result within viewport
+                const maxX = window.innerWidth - result.offsetWidth - 20;
+                const maxY = window.innerHeight - result.offsetHeight - 20;
+                
+                result.style.left = Math.min(resultX, maxX) + 'px';
+                result.style.top = Math.min(resultY, maxY) + 'px';
+                
+                // Set background
+                result.style.backgroundImage = `url(${img.src})`;
+                result.style.backgroundSize = (img.width * cx) + 'px ' + (img.height * cy) + 'px';
+                result.style.backgroundPosition = '-' + (lensX * cx) + 'px -' + (lensY * cy) + 'px';
+            });
+        }
+        
+        // Initialize zoom when image is loaded
+        if (img.complete) {
+            initZoom();
+        } else {
+            img.onload = initZoom;
+        }
+    });
+});
 </script>
 
 <%- include("../../views/partials/user/footer") %>

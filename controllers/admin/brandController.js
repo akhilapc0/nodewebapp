@@ -87,7 +87,7 @@ const deleteBrand=async(req,res)=>{
         }
 
         // Check if brand is used in any products
-        const productsWithBrand = await product.find({ brand: brand.brandName });
+        const productsWithBrand = await product.find({ brand: id });
         if(productsWithBrand.length > 0) {
             return res.status(400).json({ 
                 success: false, 

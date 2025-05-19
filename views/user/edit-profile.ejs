@@ -1,0 +1,29 @@
+<%- include("../../views/partials/user/header") %>
+<div class="container mt-5">
+    <h2>Edit Profile</h2>
+    <% if (message) { %>
+        <div class="alert alert-danger"><%= message %></div>
+    <% } %>
+    <form action="/edit-profile" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label>Name</label>
+            <input type="text" name="name" class="form-control" value="<%= user.name %>" required>
+        </div>
+        <div class="mb-3">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control" value="<%= user.email %>" required>
+        </div>
+        <div class="mb-3">
+            <label>Phone</label>
+            <input type="text" name="phone" class="form-control" value="<%= user.phone %>" required>
+        </div>
+        <!-- <div class="mb-3">
+            <label>Profile Image</label><br>
+            <img src="/uploads/profile/<%= user.profileImage || 'default-profile.png' %>" alt="Profile Image" style="width:100px;height:100px;object-fit:cover;">
+            <input type="file" name="profileImage" class="form-control mt-2" accept="image/*">
+        </div> -->
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="/profile" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+<%- include("../../views/partials/user/footer") %> 

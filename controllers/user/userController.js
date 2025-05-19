@@ -59,7 +59,7 @@ const loadHomePage = async (req, res) => {
         const categories = await Category.find({ isListed: true });
         console.log("Listed categories:", categories.map(c => c._id));
 
-        // First, let's see ALL products in the database
+        
         const allProducts = await Product.find({});
         console.log("All products in database:", allProducts.map(p => ({
             name: p.productName,
@@ -69,11 +69,10 @@ const loadHomePage = async (req, res) => {
             createdOn: p.createdOn
         })));
 
-        // Debug category filtering
+    
         const categoryIds = categories.map(category => category._id);
         console.log("Category IDs for filtering:", categoryIds);
 
-        // Try a different query approach
         let productData = await Product.find()
             .populate('category')
             .then(products => {
@@ -101,7 +100,7 @@ const loadHomePage = async (req, res) => {
             createdOn: p.createdOn
         })));
 
-        // Sort by createdOn in descending order (newest first)
+        
         productData.sort((a, b) => new Date(b.createdOn) - new Date(a.createdOn));
         const newArrivals = productData.slice(0, 4);
         
@@ -307,7 +306,8 @@ const resendOtp = async (req, res) => {
 const loadLogin = async (req, res) => {
     try {
         if (!req.session.user) {
-            return res.render("login");
+            const message = req.query.message || null;
+            return res.render("login", { message });
         } else {
             res.redirect('/')
         }
@@ -319,41 +319,63 @@ const loadLogin = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const findUser = await User.findOne({ isAdmin: 0, email: email });
+        
+        // Find user by email
+        const findUser = await User.findOne({ email: email });
+        
         if (!findUser) {
-            return res.render("login", { message: "user not found" })
+            return res.render("login", { message: "User not found" });
         }
+
+        // Check if user is blocked
         if (findUser.isBlocked) {
-            return res.render("login", { message: "user is blocked by admin" })
+            return res.render("login", { message: "Your account has been blocked. Please contact support." });
         }
+
+        // Check if user is admin
+        if (findUser.isAdmin === 1) {
+            return res.render("login", { message: "Please use admin login page" });
+        }
+
+        // Compare password
         const passwordMatch = await bcrypt.compare(password, findUser.password);
         if (!passwordMatch) {
-            return res.render("login", { message: " incorrect password " });
+            return res.render("login", { message: "Incorrect password" });
         }
-        req.session.user = findUser._id;
-        res.redirect('/')
-    }
-    catch (error) {
-        console.error("login error", error);
-        res.render("login", { message: "login failed please try again later" })
 
+        // Set user session
+        req.session.user = findUser._id;
+        
+        // Redirect to home page
+        res.redirect('/');
+    } catch (error) {
+        console.error("Login error:", error);
+        res.render("login", { message: "Login failed. Please try again later." });
     }
-}
+};
 const logout = async (req, res) => {
     try {
-
+        
         req.session.destroy((err) => {
             if (err) {
                 console.log("session destruction error", err.message);
-                return res.redirect("/pageNotFound")
+                return res.redirect("/pageNotFound");
             }
-            return res.redirect("/login")
-
-        })
-    }
-    catch (error) {
+            
+            
+            res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+            res.set('Expires', '0');
+            res.set('Pragma', 'no-cache');
+            
+            
+            res.clearCookie('connect.sid');
+            
+        
+            return res.redirect("/login");
+        });
+    } catch (error) {
         console.log("logout error", error);
-        res.redirect("/pageNotFound")
+        res.redirect("/pageNotFound");
     }
 }
 
@@ -362,7 +384,7 @@ const loadShoppingPage = async (req, res) => {
         const user = req.session.user;
         const userData = await User.findOne({ _id: user });
         
-        // Get query parameters
+        
         const { 
             search, 
             category, 
@@ -372,39 +394,37 @@ const loadShoppingPage = async (req, res) => {
             page = 1 
         } = req.query;
 
-        // Debug initial query parameters
         console.log('Query Parameters:', { search, category, brand, minPrice, maxPrice, page });
 
-        // Get all listed categories
+        
         const categories = await Category.find({ isListed: true });
         const categoryIds = categories.map(category => category._id);
         
-        // Build filter object
+        
         let filter = {
             isBlocked: false,
             quantity: { $gt: 0 }
         };
 
-        // Add category filter if specified
+        
         if (category) {
             filter.category = category;
         } else {
             filter.category = { $in: categoryIds };
         }
 
-        // Add brand filter if specified
+        
         if (brand) {
             filter.brand = brand;
         }
 
-        // Add price filter if specified
+        
         if (minPrice || maxPrice) {
             filter.salesPrice = {};
             if (minPrice) filter.salesPrice.$gte = Number(minPrice);
             if (maxPrice) filter.salesPrice.$lte = Number(maxPrice);
         }
 
-        // Add search filter if specified
         if (search) {
             filter.$or = [
                 { productName: { $regex: search, $options: 'i' } },
@@ -412,18 +432,18 @@ const loadShoppingPage = async (req, res) => {
             ];
         }
 
-        // Debug the final filter
+        
         console.log('Final Filter:', JSON.stringify(filter, null, 2));
 
-        // Get total count before pagination
+        
         const totalProducts = await Product.countDocuments(filter);
         console.log('Total products matching filter:', totalProducts);
 
-        // Pagination setup
+        
         const limit = 9;
         const skip = (page - 1) * limit;
 
-        // Get products with populated categories and brands
+        
         const products = await Product.find(filter)
             .populate('category')
             .populate('brand')
@@ -431,7 +451,7 @@ const loadShoppingPage = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        // Debug product details
+        
         console.log('Products found:', products.length);
         products.forEach(p => {
             console.log('Product:', {
@@ -446,10 +466,10 @@ const loadShoppingPage = async (req, res) => {
 
         const totalPages = Math.ceil(totalProducts / limit);
         
-        // Get brands
+        
         const brands = await Brand.find({ isBlocked: false });
         
-        // Format categories for the view
+        
         const categoriesWithIds = categories.map(category => ({
             _id: category._id,
             name: category.name
@@ -479,10 +499,14 @@ const loadShoppingPage = async (req, res) => {
 const loadProductDetails = async (req, res) => {
     try {
         const productId = req.query.id;
-        const user = req.session.user;
-        const userData = await User.findOne({ _id: user });
+        if (!productId) {
+            return res.redirect('/shop');
+        }
 
-        const product = await Product.findOne({ _id: productId })
+        const user = req.session.user;
+        const userData = user ? await User.findOne({ _id: user }) : null;
+
+        const product = await Product.findOne({ _id: productId, isBlocked: false })
             .populate('category')
             .populate('brand');
 
@@ -494,6 +518,7 @@ const loadProductDetails = async (req, res) => {
             user: userData,
             product: product,
             category: product.category,
+            brand: product.brand,
             quantity: product.quantity
         });
 
@@ -505,32 +530,34 @@ const loadProductDetails = async (req, res) => {
 
 const addToCart = async (req, res) => {
     try {
-        const { productId, quantity } = req.body;
+        const { productId } = req.body;
         const userId = req.session.user;
 
-        // Validate input
-        if (!productId || !quantity) {
+        if (!productId) {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
 
-        // Check if product exists and is available
-        const product = await Product.findOne({ 
-            _id: productId,
-            isBlocked: false,
-            quantity: { $gt: 0 }
-        });
+        // Find product and populate category (model name is lowercase 'category')
+        const product = await Product.findOne({ _id: productId }).populate({ path: 'category', model: 'category' });
 
+        // Debug log
         if (!product) {
+            console.error('addToCart: Product not found for id', productId);
+        } else if (!product.category) {
+            console.error('addToCart: Product found but category not populated', productId);
+        }
+
+        // Check product and category status
+        if (!product || product.isBlocked || product.quantity <= 0) {
             return res.status(404).json({ success: false, message: 'Product not found or not available' });
         }
-
-        // Check if quantity is valid
-        if (quantity > product.quantity) {
-            return res.status(400).json({ success: false, message: 'Requested quantity not available' });
+        if (!product.category || product.category.isListed === false) {
+            return res.status(403).json({ success: false, message: 'Product category is unlisted. Cannot add to cart.' });
         }
 
+        // If you have a Cart model, add logic here to actually add to cart
+        // For now, just return success
         res.json({ success: true, message: 'Product added to cart successfully' });
-
     } catch (error) {
         console.error('Error in addToCart:', error);
         res.status(500).json({ success: false, message: 'Error adding product to cart' });
@@ -542,12 +569,12 @@ const addToWishlist = async (req, res) => {
         const { productId } = req.body;
         const userId = req.session.user;
 
-        // Validate input
+        
         if (!productId) {
             return res.status(400).json({ success: false, message: 'Product ID is required' });
         }
 
-        // Check if product exists and is available
+       
         const product = await Product.findOne({ 
             _id: productId,
             isBlocked: false

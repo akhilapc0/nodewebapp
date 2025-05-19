@@ -129,12 +129,23 @@
                                <button class="btn btn-md rounded font-sm hover-up" type="submit">Publish Product</button>
                            </div>
                        </form>
+                       <!-- Image Cropper Modal -->
+<div id="cropperModal" style="display: none; position: fixed; top: 10%; left: 25%; z-index: 9999; background: white; padding: 20px; border-radius: 10px;">
+  <h4>Crop Image</h4>
+  <img id="cropperImage" style="max-width: 100%; max-height: 400px;">
+  <div style="margin-top: 10px;">
+    <button type="button" onclick="cropImage()">Crop</button>
+    <button type="button" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
                    </div>
                </div>
            </div>
        </div>
    </section>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.js" integrity="sha512-lR8d1BXfYQuiqoM/LeGFVtxFyspzWFTZNyYIiE5O2CcAGtTCRRUMLloxATRuLz8EmR2fYqdXYlrGh+D6TVGp3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
 
@@ -146,20 +157,7 @@
         }
     }
 
-    function viewImage(event, index) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            const imgView = document.getElementById(`imgView${index}`);
-            
-            reader.onload = function(e) {
-                imgView.src = e.target.result;
-                imgView.style.display = 'block';
-            }
-            
-            reader.readAsDataURL(file);
-        }
-    }
+    
 
     function validateForm() {
               clearErrorMessages();
@@ -250,7 +248,67 @@
   
           }
 
+let cropper;
+    let currentIndex;
 
+    function viewImage(event, index) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            currentIndex = index;
+
+            reader.onload = function(e) {
+                const cropperImage = document.getElementById('cropperImage');
+                cropperImage.src = e.target.result;
+
+                // Show modal
+                document.getElementById('cropperModal').style.display = 'block';
+
+                // Destroy previous cropper if exists
+                if (cropper) cropper.destroy();
+
+                // Wait for image to load before initializing cropper
+                cropperImage.onload = () => {
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        responsive: true
+                    });
+                };
+            };
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function cropImage() {
+        const canvas = cropper.getCroppedCanvas({
+            width: 300,
+            height: 300
+        });
+
+        const imgView = document.getElementById(`imgView${currentIndex}`);
+        imgView.src = canvas.toDataURL();
+        imgView.style.display = 'block';
+
+        // Optional: Replace the original input file (if you want to send cropped version to server)
+        canvas.toBlob(blob => {
+            const fileInput = document.getElementById(`input${currentIndex}`);
+            const file = new File([blob], "cropped-image.png", { type: "image/png" });
+
+            // Creating new DataTransfer for setting the cropped blob as file input
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+        });
+
+        closeModal();
+    }
+
+    function closeModal() {
+        document.getElementById('cropperModal').style.display = 'none';
+        if (cropper) cropper.destroy();
+    }
 
 </script>
      
