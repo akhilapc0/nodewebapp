@@ -120,7 +120,7 @@
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <div class="card">
+      <div class="card">
                     <div class="card-header">
                         <h3 class="text-center">Login</h3>
                     </div>
@@ -130,36 +130,36 @@
                         <% } %>
                         <form action="/login" method="POST" id="loginForm">
                             <div class="form-group mb-3">
-                                <label for="email">Email address</label>
+                <label for="email">Email address</label>
                                 <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
+              </div>
                             <div class="form-group mb-3">
-                                <label for="password">Password</label>
+                <label for="password">Password</label>
                                 <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
+              </div>
                             <div class="form-group text-center">
                                 <button type="submit" class="btn btn-primary">Login</button>
-                            </div>
+              </div>
                             <div class="text-center mt-3">
                                 <p>Don't have an account? <a href="/signup">Sign up</a></p>
                                 <p><a href="/forgot-password">Forgot Password?</a></p>
-                            </div>
+              </div>
                         </form>
-                    </div>
                 </div>
-            </div>
+          </div>
         </div>
+      </div>
     </div>
     <script>
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value.trim();
-        
+
         if (!email || !password) {
             e.preventDefault();
             alert('Please fill in all fields');
-        }
-    });
+          }
+      });
     </script>
     <%- include("../../views/partials/user/footer") %>
   </body>

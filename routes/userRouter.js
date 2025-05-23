@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
+const cartController = require("../controllers/user/cartController");
 const userController = require("../controllers/user/userController");
 const profileController = require("../controllers/user/profileController");
 const productController = require("../controllers/user/productController");
@@ -62,21 +63,25 @@ router.post("/delete-address/:id", userAuth, profileController.deleteAddress);
 //product management
 router.get("/productDetails", userController.loadProductDetails);
 
-// Protected routes
-router.get('/cart', userAuth, userController.loadCart);
-router.get('/wishlist', userAuth, userController.loadWishlist);
 
-// Cart and Wishlist API routes
-router.post('/add-to-cart', userAuth, userController.addToCart);
+//cart management
+
+router.post('/add-to-cart', cartController.addToCart);
+router.get('/cart', cartController.getCart);
+router.post('/cart/update-quantity', cartController.updateQuantity);
+router.get('/cart/remove/:productId', cartController.removeFromCart);
+
+
+router.get('/wishlist', userAuth, userController.loadWishlist);
 router.post('/add-to-wishlist', userAuth, userController.addToWishlist);
 
-// User profile
+
 router.get('/profile', userAuth, profileController.userProfile);
 
-// Profile Image Update
+
 router.post("/update-profile-image", userAuth, upload.single('profileImage'), profileController.updateProfileImage);
 
-// Edit Profile
+
 router.get('/edit-profile', userAuth, profileController.getEditProfile);
 router.post('/edit-profile', userAuth, upload.single('profileImage'), profileController.postEditProfile);
 

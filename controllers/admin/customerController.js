@@ -70,13 +70,14 @@ const customerInfo = async (req, res) => {
             page = parseInt(req.query.page);
         }
 
-        const limit = 3;
+        const limit = 10; // Increased limit for better display
 
         const userData = await User.find({
             isAdmin: false,
             $or: [
                 { name: { $regex: ".*" + search + ".*", $options: "i" } },
-                { email: { $regex: ".*" + search + ".*", $options: "i" } }
+                { email: { $regex: ".*" + search + ".*", $options: "i" } },
+                { phone: { $regex: ".*" + search + ".*", $options: "i" } }
             ],
         })
             .limit(limit)
@@ -87,11 +88,12 @@ const customerInfo = async (req, res) => {
             isAdmin: false,
             $or: [
                 { name: { $regex: ".*" + search + ".*", $options: "i" } },
-                { email: { $regex: ".*" + search + ".*", $options: "i" } }
+                { email: { $regex: ".*" + search + ".*", $options: "i" } },
+                { phone: { $regex: ".*" + search + ".*", $options: "i" } }
             ]
         });
 
-        res.render('customers', {
+        res.render('admin/customers', {
             data: userData,
             currentPage: page,
             totalPages: Math.ceil(count / limit),

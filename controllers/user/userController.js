@@ -2,6 +2,7 @@ const User = require("../../models/userSchema");
 const Category = require('../../models/categorySchema');
 const Product = require("../../models/productSchema");
 const Brand = require("../../models/brandSchema");
+
 const env = require('dotenv').config();
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
@@ -380,7 +381,9 @@ const logout = async (req, res) => {
 }
 
 const loadShoppingPage = async (req, res) => {
+    console.log("jgfkjgkfkgjkfkgkfgjkfjgkjfkgjkfjgkjkgkkk")
     try {
+        console.log("hohfighifghi")
         const user = req.session.user;
         const userData = await User.findOne({ _id: user });
         
@@ -528,41 +531,40 @@ const loadProductDetails = async (req, res) => {
     }
 };
 
-const addToCart = async (req, res) => {
-    try {
-        const { productId } = req.body;
-        const userId = req.session.user;
+// const addToCart = async (req, res) => {
+//     try {
+//         const { productId } = req.body;
+//         const userId = req.session.user;
 
-        if (!productId) {
-            return res.status(400).json({ success: false, message: 'Missing required fields' });
-        }
+//         if (!productId) {
+//             return res.status(400).json({ success: false, message: 'Missing required fields' });
+//         }
 
-        // Find product and populate category (model name is lowercase 'category')
-        const product = await Product.findOne({ _id: productId }).populate({ path: 'category', model: 'category' });
+    
+//         const product = await Product.findOne({ _id: productId }).populate({ path: 'category', model: 'category' });
 
-        // Debug log
-        if (!product) {
-            console.error('addToCart: Product not found for id', productId);
-        } else if (!product.category) {
-            console.error('addToCart: Product found but category not populated', productId);
-        }
+        
+//         if (!product) {
+//             console.error('addToCart: Product not found for id', productId);
+//         } else if (!product.category) {
+//             console.error('addToCart: Product found but category not populated', productId);
+//         }
 
-        // Check product and category status
-        if (!product || product.isBlocked || product.quantity <= 0) {
-            return res.status(404).json({ success: false, message: 'Product not found or not available' });
-        }
-        if (!product.category || product.category.isListed === false) {
-            return res.status(403).json({ success: false, message: 'Product category is unlisted. Cannot add to cart.' });
-        }
+        
+//         if (!product || product.isBlocked || product.quantity <= 0) {
+//             return res.status(404).json({ success: false, message: 'Product not found or not available' });
+//         }
+//         if (!product.category || product.category.isListed === false) {
+//             return res.status(403).json({ success: false, message: 'Product category is unlisted. Cannot add to cart.' });
+//         }
 
-        // If you have a Cart model, add logic here to actually add to cart
-        // For now, just return success
-        res.json({ success: true, message: 'Product added to cart successfully' });
-    } catch (error) {
-        console.error('Error in addToCart:', error);
-        res.status(500).json({ success: false, message: 'Error adding product to cart' });
-    }
-};
+        
+//         res.json({ success: true, message: 'Product added to cart successfully' });
+//     } catch (error) {
+//         console.error('Error in addToCart:', error);
+//         res.status(500).json({ success: false, message: 'Error adding product to cart' });
+//     }
+// };
 
 const addToWishlist = async (req, res) => {
     try {
@@ -592,18 +594,18 @@ const addToWishlist = async (req, res) => {
     }
 };
 
-const loadCart = async (req, res) => {
-    try {
-        const userId = req.session.user;
-        const userData = await User.findOne({ _id: userId });
+// const loadCart = async (req, res) => {
+//     try {
+//         const userId = req.session.user;
+//         const userData = await User.findOne({ _id: userId });
 
-        res.render('cart', { user: userData });
+//         res.render('cart', { user: userData });
 
-    } catch (error) {
-        console.error('Error in loadCart:', error);
-        res.redirect('/pageNotFound');
-    }
-};
+//     } catch (error) {
+//         console.error('Error in loadCart:', error);
+//         res.redirect('/pageNotFound');
+//     }
+// };
 
 const loadWishlist = async (req, res) => {
     try {
@@ -630,9 +632,9 @@ module.exports = {
     logout,
     loadShoppingPage,
     loadProductDetails,
-    addToCart,
+    //  addToCart,
     addToWishlist,
-    loadCart,
+    // loadCart,
     loadWishlist
 }
 

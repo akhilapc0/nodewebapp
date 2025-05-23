@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'My Wishlist' %> - <%= siteName || 'Your Store' %></title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .wishlist-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            min-width: 120px;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .wishlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .wishlist-item {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .wishlist-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .item-image {
+            position: relative;
+            overflow: hidden;
+            height: 220px;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .wishlist-item:hover .item-image img {
+            transform: scale(1.05);
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-btn:hover {
+            background: #e74c3c;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .discount-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .item-content {
+            padding: 20px;
+        }
+
+        .item-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            line-height: 1.4;
+        }
+
+        .item-description {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .item-price {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .current-price {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .original-price {
+            font-size: 1rem;
+            color: #95a5a6;
+            text-decoration: line-through;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 10px;
+            width: 45px;
+        }
+
+        .btn-secondary:hover {
+            background: #d5dbdb;
+            transform: translateY(-1px);
+        }
+
+        .empty-wishlist {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: #bdc3c7;
+            margin-bottom: 20px;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .empty-description {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn-shop {
+            background: #27ae60;
+            color: white;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-shop:hover {
+            background: #219a52;
+            transform: translateY(-2px);
+        }
+
+        .wishlist-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .sort-filter {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .wishlist-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+            }
+
+            .wishlist-stats {
+                gap: 15px;
+            }
+
+            .stat-item {
+                min-width: 100px;
+                padding: 10px;
+            }
+
+            .wishlist-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .bulk-actions,
+            .sort-filter {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .wishlist-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .item-actions {
+                flex-direction: column;
+            }
+
+            .btn-secondary {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-heart"></i> My Wishlist</h1>
+            <p>Save your favorite items for later</p>
+            
+            <% if (wishlistItems && wishlistItems.length > 0) { %>
+            <div class="wishlist-stats">
+                <div class="stat-item">
+                    <div class="stat-number"><%= wishlistItems.length %></div>
+                    <div class="stat-label">Items</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">$<%= wishlistItems.reduce((total, item) => total + (item.salePrice || item.price), 0).toFixed(2) %></div>
+                    <div class="stat-label">Total Value</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">$<%= wishlistItems.filter(item => item.salePrice).reduce((total, item) => total + (item.price - item.salePrice), 0).toFixed(2) %></div>
+                    <div class="stat-label">You Save</div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <% if (wishlistItems && wishlistItems.length > 0) { %>
+        <div class="wishlist-actions">
+            <div class="bulk-actions">
+                <button class="btn btn-primary" onclick="addAllToCart()">
+                    <i class="fas fa-shopping-cart"></i> Add All to Cart
+                </button>
+                <button class="btn btn-secondary" onclick="clearWishlist()">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+            
+            <div class="sort-filter">
+                <select id="sortSelect" onchange="sortWishlist()">
+                    <option value="newest">Sort by: Newest</option>
+                    <option value="oldest">Sort by: Oldest</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="name">Name: A to Z</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="wishlist-grid" id="wishlistGrid">
+            <% wishlistItems.forEach(function(item, index) { %>
+            <div class="wishlist-item" data-item-id="<%= item.id %>">
+                <div class="item-image">
+                    <img src="<%= item.image || '/api/placeholder/280/220' %>" alt="<%= item.name %>">
+                    <button class="remove-btn" onclick="removeFromWishlist('<%= item.id %>')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <% if (item.salePrice) { %>
+                    <div class="discount-badge">
+                        <%= Math.round(((item.price - item.salePrice) / item.price) * 100) %>% OFF
+                    </div>
+                    <% } %>
+                </div>
+                
+                <div class="item-content">
+                    <h3 class="item-title"><%= item.name %></h3>
+                    <p class="item-description"><%= item.description || 'Quality product from our collection' %></p>
+                    
+                    <div class="item-price">
+                        <span class="current-price">$<%= (item.salePrice || item.price).toFixed(2) %></span>
+                        <% if (item.salePrice) { %>
+                        <span class="original-price">$<%= item.price.toFixed(2) %></span>
+                        <% } %>
+                    </div>
+                    
+                    <div class="item-actions">
+                        <button class="btn btn-primary" onclick="addToCart('<%= item.id %>')">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                        <a href="/product/<%= item.id %>" class="btn btn-secondary" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+        <% } else { %>
+        <div class="empty-wishlist">
+            <div class="empty-icon">
+                <i class="fas fa-heart-broken"></i>
+            </div>
+            <h2 class="empty-title">Your wishlist is empty</h2>
+            <p class="empty-description">
+                Looks like you haven't added any items to your wishlist yet.<br>
+                Start browsing and save items you love for later!
+            </p>
+            <a href="/shop" class="btn-shop">
+                <i class="fas fa-shopping-bag"></i>
+                Start Shopping
+            </a>
+        </div>
+        <% } %>
+    </div>
+
+    <script>
+        // Remove item from wishlist
+        function removeFromWishlist(itemId) {
+            if (confirm('Are you sure you want to remove this item from your wishlist?')) {
+                fetch(`/api/wishlist/remove/${itemId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+                        itemElement.style.animation = 'fadeOut 0.3s ease-out';
+                        setTimeout(() => {
+                            itemElement.remove();
+                            updateWishlistStats();
+                            checkEmptyWishlist();
+                        }, 300);
+                        showNotification('Item removed from wishlist', 'success');
+                    } else {
+                        showNotification('Failed to remove item', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('An error occurred', 'error');
+                });
+            }
+        }
+
+        // Add item to cart
+        function addToCart(itemId) {
+            fetch(`/api/cart/add/${itemId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Item added to cart!', 'success');
+                    // Optionally remove from wishlist after adding to cart
+                    // removeFromWishlist(itemId);
+                } else {
+                    showNotification('Failed to add item to cart', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred', 'error');
+            });
+        }
+
+        // Add all items to cart
+        function addAllToCart() {
+            const itemIds = Array.from(document.querySelectorAll('[data-item-id]'))
+                .map(el => el.getAttribute('data-item-id'));
+            
+            if (itemIds.length === 0) return;
+
+            if (confirm(`Add all ${itemIds.length} items to your cart?`)) {
+                fetch('/api/cart/add-multiple', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ itemIds })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(`${itemIds.length} items added to cart!`, 'success');
+                    } else {
+                        showNotification('Failed to add items to cart', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('An error occurred', 'error');
+                });
+            }
+        }
+
+        // Clear entire wishlist
+        function clearWishlist() {
+            if (confirm('Are you sure you want to clear your entire wishlist?')) {
+                fetch('/api/wishlist/clear', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        showNotification('Failed to clear wishlist', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('An error occurred', 'error');
+                });
+            }
+        }
+
+        // Sort wishlist
+        function sortWishlist() {
+            const sortValue = document.getElementById('sortSelect').value;
+            const grid = document.getElementById('wishlistGrid');
+            const items = Array.from(grid.children);
+
+            items.sort((a, b) => {
+                switch (sortValue) {
+                    case 'price-low':
+                        return parseFloat(a.querySelector('.current-price').textContent.replace('$', '')) - 
+                               parseFloat(b.querySelector('.current-price').textContent.replace('$', ''));
+                    case 'price-high':
+                        return parseFloat(b.querySelector('.current-price').textContent.replace('$', '')) - 
+                               parseFloat(a.querySelector('.current-price').textContent.replace('$', ''));
+                    case 'name':
+                        return a.querySelector('.item-title').textContent.localeCompare(b.querySelector('.item-title').textContent);
+                    case 'oldest':
+                        return parseInt(a.getAttribute('data-item-id')) - parseInt(b.getAttribute('data-item-id'));
+                    case 'newest':
+                    default:
+                        return parseInt(b.getAttribute('data-item-id')) - parseInt(a.getAttribute('data-item-id'));
+                }
+            });
+
+            items.forEach(item => grid.appendChild(item));
+        }
+
+        // Update wishlist statistics
+        function updateWishlistStats() {
+            // This would be implemented based on your backend logic
+            // For now, we'll just reload the page to update stats
+            // In a real app, you'd update the stats dynamically
+        }
+
+        // Check if wishlist is empty and show empty state
+        function checkEmptyWishlist() {
+            const grid = document.getElementById('wishlistGrid');
+            if (grid.children.length === 0) {
+                location.reload();
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            
+            // Add styles for notifications
+            if (!document.querySelector('#notification-styles')) {
+                const styles = document.createElement('style');
+                styles.id = 'notification-styles';
+                styles.textContent = `
+                    .notification {
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        padding: 15px 20px;
+                        border-radius: 8px;
+                        color: white;
+                        font-weight: 500;
+                        z-index: 1000;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        animation: slideIn 0.3s ease-out;
+                        max-width: 300px;
+                    }
+                    .notification-success { background: #27ae60; }
+                    .notification-error { background: #e74c3c; }
+                    .notification-info { background: #3498db; }
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes fadeOut {
+                        from { opacity: 1; transform: scale(1); }
+                        to { opacity: 0; transform: scale(0.9); }
+                    }
+                `;
+                document.head.appendChild(styles);
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add CSS animation for item removal
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                from { opacity: 1; transform: scale(1); }
+                to { opacity: 0; transform: scale(0.9); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

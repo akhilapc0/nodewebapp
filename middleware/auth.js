@@ -33,21 +33,39 @@ const userAuth = (req, res, next) => {
     }
 };
 
-const adminAuth = (req, res, next) => {
-    if (req.session.admin) {
-        User.findOne({ isAdmin: true })
+const adminAuth = async(req, res, next) => {
+    try {
+        if (!req.session.admin) {
+            return res.redirect("/admin/login");
+        }
+        
+        // If we're already on the login page, don't redirect
+        if (req.path === '/login') {
+            return next();
+        }
+        console.log(req.session.adminEmail)
+    User.find({ email:req.session.adminEmail,isAdmin:true })
             .then(data => {
+                console.log()
                 if (data) {
                     next();
                 } else {
+                    console.log("jfjhfjf")
+                    req.session.destroy((err) => {
+                        if (err) {
+                            console.log("Error destroying session:", err);
+                        }
                     res.redirect("/admin/login");
+                    });
                 }
             })
             .catch(error => {
-                console.log("error in admin Auth middleware", error);
-                res.status(500).send("internal server error");
+                console.log("Error in adminAuth middleware:", error);
+                res.status(500).send("Internal server error");
             });
-    } else {
+
+    } catch (error) {
+        console.log("Error in adminAuth middleware:", error);
         res.redirect("/admin/login");
     }
 };

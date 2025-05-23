@@ -394,30 +394,49 @@
 </div>
 
 <script>
-function addToCart(productId) {
-  fetch('/add-to-cart', {
-    method: 'POST',
+// function addToCart1(productId) {
+//   fetch('/add-to-cart', {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json'
+//     },
+//     body: JSON.stringify({ productId })
+//   })
+//   .then(response => response.json())
+//   .then(data => {
+//     if (data.ok) {
+//       alert('Product added to cart!');
+//     } else {
+//       alert(data.message || 'Error adding product to cart');
+//     }
+//   })
+//   .catch(error => {
+//     console.error('Error:', error);
+//     alert('Error adding product to cart');
+//   });
+// }
+
+
+async function addToCart(productId) {
+  const response = await fetch("/add-to-cart",{
+    method:"POST",
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ productId })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert('Product added to cart!');
-    } else {
-      alert(data.message || 'Error adding product to cart');
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Error adding product to cart');
-  });
-}
 
+  })
+
+  const jsonResponse = await response.json()
+  if(response.ok){
+      alert('Product added to cart!');
+
+  }else{
+      alert(jsonResponse.error || 'Error adding product to cart');
+
+  }
+}
 </script>
 
 <%- include("../../views/partials/user/footer") %>
-
 

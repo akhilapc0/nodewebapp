@@ -221,12 +221,12 @@
                            <p class="card-text">
                              <strong>Email:</strong> <%= user.email %>
                            </p>
-                           <p class="card-text">
+                     <p class="card-text">
                              <strong>Phone:</strong> <%= user.phone %>
-                           </p>
-                           <p class="card-text">
+                     </p>
+                     <p class="card-text">
                              <strong>Member Since:</strong> <%= new Date(user.createdAt).toLocaleDateString() %>
-                           </p>
+                     </p>
                            <div class="mt-4">
                              <a href="/change-email" class="btn btn-sm btn-outline-primary me-2">Change Email</a>
                              <a href="/change-password" class="btn btn-sm btn-outline-primary">Change Password</a>
@@ -253,7 +253,7 @@
                        <% userAddress.address.forEach((address) => { %>
                            <div class="col-md-6 mb-4">
                                <div class="card">
-                                   <div class="card-body">
+                       <div class="card-body">
                                        <h5 class="card-title"><%= address.addressType %></h5>
                                        <p class="card-text">
                                            <strong>Name:</strong> <%= address.name %><br>
@@ -269,22 +269,22 @@
                                        <div class="d-flex justify-content-between mt-3">
                                            <a href="/edit-address/<%= address._id %>" class="btn btn-sm btn-primary">Edit</a>
                                            <button onclick="deleteAddress('<%= address._id %>')" class="btn btn-sm btn-danger">Delete</button>
-                                       </div>
-                                   </div>
-                               </div>
-                           </div>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
                        <% }); %>
                    <% } else { %>
                        <div class="col-12">
                            <div class="alert alert-info">
                                No addresses found. <a href="/add-address">Add your first address</a>
-                           </div>
+                       </div>
                        </div>
                    <% } %>
                    <div class="col-12 mt-3">
                        <a href="/add-address" class="btn btn-primary">
                            <i class="fi-rs-plus mr-10"></i>Add New Address
-                       </a>
+                     </a>
                    </div>
                  </div>
                </div>

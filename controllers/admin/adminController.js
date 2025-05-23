@@ -18,74 +18,133 @@ const pageerror=async (req,res)=>{
 
 
 const loadLogin=(req,res)=>{
-    if(req.session.admin){
-        return res.redirect("admin");
+    try {
+        // If already logged in, redirect to dashboard
+        if(req.session.admin){
+            return res.redirect("/admin");
+        }
+        // Otherwise show login page
+        res.render("admin-login",{message:null})
+    } catch (error) {
+        console.log("Load login error:", error);
+        res.redirect("/admin/pageerror");
     }
-    res.render("admin-login",{message:null})
 }
 
 const login=async (req,res)=>{
-    try{
-        const{email,password}=req.body;
-        const admin= await User.findOne({email,isAdmin:true});
-        if(admin){
-            const passwordMatch=bcrypt.compare(password,admin.password);
-            if(passwordMatch){
-                req.session.admin=true;
-                return res.redirect("/admin");
-            }else{
-                 return res.redirect("/login")
-            }
-        }
-        else{
-            return res.redirect("/login")
+    try {
+        const { email, password } = req.body;
+        console.log("Attempting login with email:", email);
+
+        // First find the user by email only
+        const user = await User.findOne({ email: email });
+        console.log("Found user:", user);
+
+        if (!user) {
+            return res.render("admin-login", { message: "Admin not found" });
         }
 
-    }
-    catch(error){
-        console.log("login error",error);
-        return res.redirect("/pageerror")
+        // Then check if the user is an admin
+        if (user.isAdmin !== 1) {
+            return res.render("admin-login", { message: "Not authorized as admin" });
+        }
+
+        // Compare password
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            return res.render("admin-login", { message: "Incorrect password" });
+        }
+
+        // Set admin session and email
+        req.session.admin = true;
+        req.session.adminEmail = email;
+        console.log("Admin session set:", req.session);
+        return res.redirect("/admin");
+
+    } catch (error) {
+        console.log("Login error:", error);
+        return res.render("admin-login", { message: "An error occurred during login" });
     }
 }
 
 
 const loadDashboard = async (req, res) => {
-    if (req.session.admin) {
-        try {
-            res.render("dashboard")
+    try {
+        console.log("Session in dashboard:", req.session);
+        if (!req.session.admin) {
+            console.log("No admin session found, redirecting to login");
+            return res.redirect("/admin/login");
         }
-        catch (error) {
-            res.redirect("/pageerror")
-        }
+        res.render("dashboard");
+    } catch (error) {
+        console.log("Dashboard error:", error);
+        res.redirect("/admin/pageerror");
     }
-}
+};
 
 
 const logout=async(req,res)=>{
     try{
         req.session.destroy(err=>{
             if(err){
-                console.log("error destroying session",err);
-                return res.redirect("/pageerror")
+                console.log("Error destroying session:", err);
+                return res.redirect("/admin/pageerror");
             }
             res.redirect("/admin/login")
         })
      
     }
     catch(error){
-        console.log("unexpected error during logout",error);
-        res.redirect("/pageerror")
+        console.log("Logout error:", error);
+        res.redirect("/admin/pageerror")
     }
 }
 
+const loadCustomers = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
 
+        // Get search query if any
+        const search = req.query.search || '';
 
+        // Build search query
+        const searchQuery = search ? {
+            $or: [
+                { name: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
+                { phone: { $regex: search, $options: 'i' } }
+            ]
+        } : {};
 
+        // Get total count for pagination
+        const totalUsers = await User.countDocuments(searchQuery);
+        const totalPages = Math.ceil(totalUsers / limit);
+
+        // Get users with pagination and search
+        const users = await User.find(searchQuery)
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 });
+
+        res.render('admin/customers', {
+            data: users,
+            currentPage: page,
+            totalPages: totalPages,
+            search: search
+        });
+    } catch (error) {
+        console.log("Load customers error:", error);
+        res.redirect("/admin/pageerror");
+    }
+};
 
 module.exports={
     loadLogin,
     login,
     loadDashboard,
     pageerror,
-    logout
+    logout,
+    loadCustomers
 }

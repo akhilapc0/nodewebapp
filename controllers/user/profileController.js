@@ -635,6 +635,66 @@ const postEditProfile = async (req, res) => {
     }
 };
 
+// New functions for the checkout system
+const getAddresses = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Please login to continue" });
+        }
+
+        const addressData = await Address.findOne({ userId });
+        if (!addressData) {
+            return res.status(200).json({ success: true, addresses: [] });
+        }
+
+        res.status(200).json({ success: true, addresses: addressData.address });
+    } catch (error) {
+        console.error("Error fetching addresses:", error);
+        res.status(500).json({ success: false, message: "Error fetching addresses" });
+    }
+};
+
+const setDefaultAddress = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const addressId = req.params.id;
+
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Please login to continue" });
+        }
+
+        const userAddress = await Address.findOne({ userId });
+        if (!userAddress) {
+            return res.status(404).json({ success: false, message: "No addresses found" });
+        }
+
+        // Set all addresses to non-default
+        userAddress.address.forEach(addr => {
+            addr.isDefault = false;
+        });
+
+        // Set the selected address as default
+        const address = userAddress.address.id(addressId);
+        if (!address) {
+            return res.status(404).json({ success: false, message: "Address not found" });
+        }
+        address.isDefault = true;
+
+        await userAddress.save();
+        res.status(200).json({ success: true, message: "Default address set successfully" });
+    } catch (error) {
+        console.error("Error setting default address:", error);
+        res.status(500).json({ success: false, message: "Error setting default address" });
+    }
+};
+
+
+
+
+
+
+
 module.exports={
     getForgotPassPage,
     forgotEmailValid,
@@ -658,7 +718,9 @@ module.exports={
     deleteAddress,
     updateProfileImage,
     getEditProfile,
-    postEditProfile
+    postEditProfile,
+    getAddresses,
+    setDefaultAddress
 }
 
 
