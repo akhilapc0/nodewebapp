@@ -195,7 +195,9 @@
     <% } else { %>
       <% cart.items.forEach(item => { %>
         <div class="cart-item" id="cart-item-<%= item.product._id %>">
-          <img src="/product-images/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>">
+          <a href="/product/<%= item.product._id %>" class="item-image">
+            <img src="/uploads/re-image/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>">
+          </a>
           
           <div class="cart-info">
             <h3><%= item.product.productName %></h3>

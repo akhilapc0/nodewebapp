@@ -306,62 +306,70 @@
                     <div class="stat-number"><%= wishlist.products.length %></div>
                     <div class="stat-label">Items</div>
                 </div>
-                <!-- You can add more stats here if needed, e.g., total value -->
             </div>
 
             <div class="wishlist-grid">
-                <% wishlist.products.forEach(product => { %>
-                    <% if (product) { %> <%-- Check if product object exists --%>
+                <% wishlist.products.forEach(function(product) { %>
+                    <% if (product) { %>
                         <div class="wishlist-item" id="wishlist-item-<%= product._id %>">
-                            <% if (product._id) { %> <%-- Check for product _id before using it in ID and onclick --%>
-                                <button class="remove-btn" onclick="removeFromWishlist('<%- product._id %>')"><i class="fas fa-times"></i></button>
+                            <% if (product._id) { %>
+                                <button class="remove-btn" onclick="removeFromWishlist('<%= product._id %>')">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             <% } %>
-                            <% if (product.discountPercentage && product.discountPercentage > 0) { %> <%-- Check for discount percentage --%>
+                            
+                            <% if (product.discountPercentage && product.discountPercentage > 0) { %>
                                 <span class="discount-badge">-<%= product.discountPercentage %>%</span>
                             <% } %>
-                            <% if (product.productImage && product.productImage[0] && product._id) { %> <%-- Check for product image and _id --%>
-                                <a href="/product/<%- product._id %>" class="item-image">
-                                    <img src="/product-images/<%= product.productImage[0] %>" alt="<%= product.productName || 'Product Image' %>"> <%-- Add alt text check --%>
+                            
+                            <% if (product.productImage && product.productImage[0] && product._id) { %>
+                                <a href="/product/<%= product._id %>" class="item-image">
+                                    <img src="/uploads/re-image/<%= product.productImage[0] %>" alt="<%= product.productName || 'Product Image' %>">
                                 </a>
-                            <% } else if (product && product._id) { %> <%-- Fallback for missing image but existing product --%>
-                                 <a href="/product/<%- product._id %>" class="item-image">
-                                    <img src="/images/placeholder.png" alt="<%= product.productName || 'Product Image' %>"> <%-- Placeholder or default image --%>
+                            <% } else if (product && product._id) { %>
+                                <a href="/product/<%= product._id %>" class="item-image">
+                                    <img src="/images/placeholder.png" alt="<%= product.productName || 'Product Image' %>">
                                 </a>
                             <% } %>
+                            
                             <div class="item-content">
-                                <% if (product.productName) { %> <%-- Check for product name --%>
+                                <% if (product.productName) { %>
                                     <h3 class="item-title"><%= product.productName %></h3>
                                 <% } %>
-                                <!-- You might want to add a short description or category here -->
-                                <% if (product && typeof product.quantity !== 'undefined') { %> <%-- Check for quantity and product existence --%>
+                                
+                                <% if (product && typeof product.quantity !== 'undefined') { %>
                                     <div class="stock-info <%= product.quantity > 0 ? 'in-stock' : 'out-of-stock' %>">
                                         <%= product.quantity > 0 ? 'In Stock' : 'Out of Stock' %>
                                     </div>
                                 <% } %>
-                                <% if (product && typeof product.salesPrice !== 'undefined') { %> <%-- Check for sales price and product existence --%>
+                                
+                                <% if (product && typeof product.salesPrice !== 'undefined') { %>
                                     <div class="item-price">
-                                        <span class="current-price">₹<%= typeof product.salesPrice !== 'undefined' ? product.salesPrice.toFixed(2) : 'N/A' %></span> <%-- Add check and default --%>
-                                        <% if (product && typeof product.originalPrice !== 'undefined' && product.originalPrice > product.salesPrice) { %> <%-- Check for original price and product existence --%>
-                                            <span class="original-price">₹<%= typeof product.originalPrice !== 'undefined' ? product.originalPrice.toFixed(2) : 'N/A' %></span> <%-- Add check and default --%>
+                                        <span class="current-price">₹<%= product.salesPrice.toFixed(2) %></span>
+                                        <% if (product.originalPrice && product.originalPrice > product.salesPrice) { %>
+                                            <span class="original-price">₹<%= product.originalPrice.toFixed(2) %></span>
                                         <% } %>
                                     </div>
                                 <% } %>
+                                
                                 <div class="item-actions">
-                                    <% if (product && typeof product.quantity !== 'undefined' && product.quantity > 0 && product._id) { %> <%-- Check for quantity and _id before Add to Cart --%>
-                                        <button class="btn btn-primary add-to-cart-btn" onclick="addToCartFromWishlist('<%- product._id %>')">
+                                    <% if (product && product.quantity > 0 && product._id) { %>
+                                        <button class="btn btn-primary add-to-cart-btn" onclick="addToCartFromWishlist('<%= product._id %>')">
                                             <i class="fas fa-shopping-cart"></i> Add to Cart
                                         </button>
                                     <% } else { %>
-                                        <button class="btn btn-secondary" disabled>
-                                            Out of Stock
-                                        </button>
+                                        <button class="btn btn-secondary" disabled>Out of Stock</button>
                                     <% } %>
-                                    <!-- Optional: View Product Button -->
-                                    <% if (product && product._id) { %><a href="/product/<%- product._id %>" class="btn btn-secondary"><i class="fas fa-eye"></i></a><% } %>
+                                    
+                                    <% if (product && product._id) { %>
+                                        <a href="/product/<%= product._id %>" class="btn btn-secondary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    <% } %>
                                 </div>
                             </div>
                         </div>
-                    <% } %> <%-- End check for product existence --%>
+                    <% } %>
                 <% }); %>
             </div>
         <% } else { %>
@@ -372,16 +380,12 @@
                 <a href="/shop" class="btn btn-shop">Start Shopping</a>
             </div>
         <% } %>
-
     </div>
 
     <%- include("../../views/partials/user/footer") %>
 
-    <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
-        // Function to remove item from wishlist
         async function removeFromWishlist(productId) {
             const result = await Swal.fire({
                 title: 'Are you sure?',
@@ -405,83 +409,61 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        Swal.fire(
-                            'Removed!',
-                            'Item has been removed from your wishlist.',
-                            'success'
-                        );
-                        // Remove the item element from the DOM
+                        Swal.fire('Removed!', 'Item has been removed from your wishlist.', 'success');
                         const itemElement = document.getElementById(`wishlist-item-${productId}`);
-                         if (itemElement) {
+                        if (itemElement) {
                             itemElement.remove();
-                         }
-
-                        // Reload if no items left
-                         const remainingItems = document.querySelectorAll('.wishlist-item');
-                         if (remainingItems.length === 0) {
-                             location.reload();
-                         }
-
+                        }
+                        const remainingItems = document.querySelectorAll('.wishlist-item');
+                        if (remainingItems.length === 0) {
+                            location.reload();
+                        }
                     } else {
-                        Swal.fire(
-                            'Error!',
-                            data.message || 'Failed to remove item from wishlist.',
-                            'error'
-                        );
+                        Swal.fire('Error!', data.message || 'Failed to remove item from wishlist.', 'error');
                     }
                 } catch (error) {
                     console.error('Error removing from wishlist:', error);
-                    Swal.fire(
-                        'Error!',
-                        'Failed to remove item from wishlist.',
-                        'error'
-                    );
+                    Swal.fire('Error!', 'Failed to remove item from wishlist.', 'error');
                 }
             }
         }
 
-        // Function to add item to cart from wishlist
         async function addToCartFromWishlist(productId) {
-             try {
-                 const response = await fetch('/cart/add-to-cart', {
-                     method: 'POST',
-                     headers: {
-                         'Content-Type': 'application/json'
-                     },
-                     body: JSON.stringify({ productId: productId })
-                 });
+            try {
+                const response = await fetch('/add-to-cart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ productId: productId })
+                });
 
-                 const data = await response.json();
+                const data = await response.json();
 
-                 if (response.ok) {
-                     Swal.fire({
-                         icon: 'success',
-                         title: 'Added to Cart!',
-                         text: data.message,
-                         timer: 1500,
-                         showConfirmButton: false
-                     });
-                     // Optionally remove from wishlist after adding to cart
-                     // removeFromWishlist(productId);
-                 } else {
-                     Swal.fire({
-                         icon: 'error',
-                         title: 'Oops...',
-                         text: data.error || 'Failed to add to cart',
-                     });
-                 }
-             } catch (error) {
-                 console.error('Error adding to cart from wishlist:', error);
-                 Swal.fire({
-                     icon: 'error',
-                     title: 'Error!',
-                     text: 'Failed to add to cart',
-                 });
-             }
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Added to Cart!',
+                        text: data.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: data.error || 'Failed to add to cart'
+                    });
+                }
+            } catch (error) {
+                console.error('Error adding to cart from wishlist:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Failed to add to cart'
+                });
+            }
         }
-
-
     </script>
-
 </body>
 </html>

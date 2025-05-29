@@ -51,6 +51,7 @@ router.post('/add-to-cart', cartController.addToCart);
 router.get('/cart', cartController.getCart);
 router.post('/update-quantity', cartController.updateQuantity);
 router.post('/remove-from-cart/:productId', cartController.removeFromCart);
+router.post('/cart/update-quantity', cartController.updateQuantity);
 
 // Checkout routes (new)
 router.get('/checkout', cartController.loadCheckout);
@@ -64,7 +65,8 @@ router.get('/logout', userController.logout);
 router.get('/wishlist', userController.loadWishlist);
 
 // Wishlist routes
-router.post('/add-to-wishlist', wishlistController.addToWishlist);
+router.post('/add-to-wishlist', userController.addToWishlist);
+router.post('/wishlist/remove/:productId', userController.removeFromWishlist);
 
 // Order success route
 router.get('/order/success/:orderId', userController.loadOrderSuccessPage);
