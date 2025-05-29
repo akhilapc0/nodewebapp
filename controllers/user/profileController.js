@@ -424,56 +424,48 @@ const addAddress = async (req, res) => {
 const postAddAddress = async (req, res) => {
     try {
         const userId = req.session.user;
-        const { addressType, name, city, landMark, state, pincode, phone, altPhone } = req.body;
-        
-        
-        if (!addressType || !name || !city || !state || !pincode || !phone) {
-            return res.render("add-address", {
-                user: req.session.user,
-                message: "Please fill in all required fields"
-            });
+        const { addressType, name, city, landMark, state, pincode, phone, altPhone, isDefault } = req.body;
+
+        if (!name || !city || !state || !pincode || !phone) {
+            return res.status(400).json({ success: false, message: "Please fill in all required fields" });
         }
 
         const userAddress = await Address.findOne({ userId });
         
+        const newAddressData = {
+            addressType: addressType || 'Other',
+            name,
+            city,
+            landMark,
+            state,
+            pincode,
+            phone,
+            altPhone,
+            isDefault: isDefault === 'on'
+        };
+
         if (!userAddress) {
-    
             const newAddress = new Address({
                 userId,
-                address: [{
-                    addressType,
-                    name,
-                    city,
-                    landMark,
-                    state,
-                    pincode,
-                    phone,
-                    altPhone
-                }]
+                address: [newAddressData]
             });
+            newAddress.address[0].isDefault = true;
             await newAddress.save();
         } else {
-            
-            userAddress.address.push({
-                addressType,
-                name,
-                city,
-                landMark,
-                state,
-                pincode,
-                phone,
-                altPhone
-            });
+            if (newAddressData.isDefault) {
+                userAddress.address.forEach(addr => {
+                    addr.isDefault = false;
+                });
+            }
+            userAddress.address.push(newAddressData);
             await userAddress.save();
         }
         
-        res.redirect("/profile");
+        res.json({ success: true, message: "Address added successfully" });
+
     } catch (error) {
         console.error("Error in postAddAddress:", error);
-        res.render("add-address", {
-            user: req.session.user,
-            message: "Error adding address. Please try again."
-        });
+        res.status(500).json({ success: false, message: "Error adding address. Please try again." });
     }
 };
 

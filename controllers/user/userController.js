@@ -2,6 +2,7 @@ const User = require("../../models/userSchema");
 const Category = require('../../models/categorySchema');
 const Product = require("../../models/productSchema");
 const Brand = require("../../models/brandSchema");
+const Wishlist = require('../../models/wishlistSchema');
 
 const env = require('dotenv').config();
 const nodemailer = require("nodemailer");
@@ -27,33 +28,6 @@ const loadSignup = async (req, res) => {
     }
 }
 
-// const loadHomePage = async (req, res) => {
-//     try {
-//         const user = req.session.user;
-//         const categories = await Category.find({ isListed: true });
-//         let productData = await Product.find(
-//             {
-//                 isBlocked: false,
-//                 category: { $in: categories.map(category => category._id) }, quanatity: { $gt: 0 }
-//             }
-//         )
-
-//         productData.sort((a, b) => new Date(a, createdOn));
-//         productData = productData.slice(0, 4);
-//         console.log("",productData)
-//         if (user) {
-//             const userData = await User.findOne({ _id: user });
-//             res.render("home", { user: userData, products: productData })
-//         }
-//         else {
-//             return res.render("home", { products: productData })
-//         }
-//     }
-//     catch (error) {
-//         console.log("home page not found");
-//         res.status(500).send("server error");
-//     }
-// }
 const loadHomePage = async (req, res) => {
     try {
         const user = req.session.user;
@@ -128,43 +102,6 @@ const loadHomePage = async (req, res) => {
     }
 };
 
-
-
-// const signup=async(req,res)=>{
-//     try{
-//         const{name, email, phone, password, cpassword}=req.body;
-
-//         // Check if passwords match
-//         if(password!==cpassword){
-//             return res.render("signup",{message:"Passwords do not match"})
-//         }
-
-//         // Check if user already exists
-//         const existingUser = await user.findOne({ email: email });
-//         if(existingUser){
-//             return res.render("signup",{message:"Email already registered"})
-//         }
-
-//         // Create new user
-//         const newUser = new user({
-//             name,
-//             email,
-//             phone,
-//             password
-//         });
-
-//         // Save user to database
-//         await newUser.save();
-
-//         // Redirect to login page after successful registration
-//         res.redirect("/login");
-//     }
-//     catch(error){
-//         console.log("Error in signup:", error);
-//         res.render("signup",{message:"An error occurred during registration"})
-//     }
-// }
-
 function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -198,9 +135,6 @@ async function sendVerificationEmail(email, otp) {
         return false;
     }
 }
-
-
-
 
 const signup = async (req, res) => {
 
@@ -241,7 +175,6 @@ const securePassword = async (password) => {
 
     }
 }
-
 
 const verifyOtp = async (req, res) => {
     try {
@@ -531,41 +464,6 @@ const loadProductDetails = async (req, res) => {
     }
 };
 
-// const addToCart = async (req, res) => {
-//     try {
-//         const { productId } = req.body;
-//         const userId = req.session.user;
-
-//         if (!productId) {
-//             return res.status(400).json({ success: false, message: 'Missing required fields' });
-//         }
-
-    
-//         const product = await Product.findOne({ _id: productId }).populate({ path: 'category', model: 'category' });
-
-        
-//         if (!product) {
-//             console.error('addToCart: Product not found for id', productId);
-//         } else if (!product.category) {
-//             console.error('addToCart: Product found but category not populated', productId);
-//         }
-
-        
-//         if (!product || product.isBlocked || product.quantity <= 0) {
-//             return res.status(404).json({ success: false, message: 'Product not found or not available' });
-//         }
-//         if (!product.category || product.category.isListed === false) {
-//             return res.status(403).json({ success: false, message: 'Product category is unlisted. Cannot add to cart.' });
-//         }
-
-        
-//         res.json({ success: true, message: 'Product added to cart successfully' });
-//     } catch (error) {
-//         console.error('Error in addToCart:', error);
-//         res.status(500).json({ success: false, message: 'Error adding product to cart' });
-//     }
-// };
-
 const addToWishlist = async (req, res) => {
     try {
         const { productId } = req.body;
@@ -594,34 +492,71 @@ const addToWishlist = async (req, res) => {
     }
 };
 
-// const loadCart = async (req, res) => {
-//     try {
-//         const userId = req.session.user;
-//         const userData = await User.findOne({ _id: userId });
-
-//         res.render('cart', { user: userData });
-
-//     } catch (error) {
-//         console.error('Error in loadCart:', error);
-//         res.redirect('/pageNotFound');
-//     }
-// };
-
 const loadWishlist = async (req, res) => {
     try {
         const userId = req.session.user;
+        
+        // Check if user is logged in
+        if (!userId) {
+            console.log('No user ID in session, redirecting to login for wishlist');
+            return res.redirect('/login');
+        }
+
         const userData = await User.findOne({ _id: userId });
 
-        res.render('wishlist', { user: userData });
+        // Check if user data was found (in case of invalid user ID in session)
+        if (!userData) {
+             console.log('User data not found for ID in session, destroying session and redirecting to login');
+             req.session.destroy(err => {
+                if (err) console.log("Error destroying session after user not found:", err);
+                res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+                res.set('Expires', '0');
+                res.set('Pragma', 'no-cache');
+                res.clearCookie('connect.sid');
+                return res.redirect('/login?message=Session invalid. Please login again.');
+            });
+            return;
+        }
+
+        // Fetch the user's wishlist and populate product details
+        const wishlist = await Wishlist.findOne({ user: userId }).populate('products');
+        
+        console.log('Fetched wishlist:', wishlist);
+
+        res.render('wishlist', { 
+            user: userData,
+            wishlist: wishlist // Pass the fetched wishlist data to the view
+        });
 
     } catch (error) {
         console.error('Error in loadWishlist:', error);
-        res.redirect('/pageNotFound');
+        // Render an error page or redirect in case of unexpected errors
+        res.status(500).render('page-404', { message: 'Error loading wishlist.' });
+    }
+};
+
+const loadOrderSuccessPage = async (req, res) => {
+    try {
+        const orderId = req.params.orderId;
+        const userId = req.session.user; // Get user ID from session
+        let userData = null;
+
+        if (userId) {
+            userData = await User.findById(userId); // Fetch user data if logged in
+        }
+
+        // In a real application, you would fetch order details from the database here
+        // using the orderId and pass them to the EJS template.
+
+        // For now, we'll just render the success page with the orderId and user data
+        res.render('user/order-success', { orderId, user: userData });
+    } catch (error) {
+        console.error('Error loading order success page:', error);
+        res.status(500).send('Error loading order success page.');
     }
 };
 
 module.exports = {
-    loadHomePage,
     pageNotFound,
     loadSignup,
     signup,
@@ -632,11 +567,11 @@ module.exports = {
     logout,
     loadShoppingPage,
     loadProductDetails,
-    //  addToCart,
     addToWishlist,
-    // loadCart,
-    loadWishlist
-}
+    loadWishlist,
+    loadHomePage,
+    loadOrderSuccessPage
+};
 
 
 
