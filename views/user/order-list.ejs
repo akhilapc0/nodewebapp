@@ -42,27 +42,10 @@
                     <div class="mb-4 md:mb-0">
                         <p class="text-lg font-semibold text-gray-800">Order ID: <%= order.orderID %></p>
                         <p class="text-gray-600">Date: <%= new Date(order.createdAt).toLocaleDateString('en-IN') %></p>
-                        <p class="text-gray-600">Status: <span class="badge rounded-pill alert-<%= order.status === 'Delivered' ? 'success' : order.status === 'Cancelled' ? 'danger' : 'warning' %>"><%= order.status %></span></p>
+                        <p class="text-gray-600">Status: <span class="badge rounded-pill alert-<%= order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'danger' : order.status === 'returned' ? 'info' : 'warning' %> text-dark"><%= order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending' %></span></p>
                         <p class="text-gray-600">Total: ₹<%= order.finalTotal %></p>
                     </div>
                     <div class="action-buttons flex flex-wrap gap-3">
-                        <a href="/user/orders/<%= order.orderID %>" class="btn btn-info btn-sm">View Details</a>
-                        <% if (order.status !== 'Cancelled' && order.status !== 'Delivered') { %>
-                            <button
-                                onclick="cancelOrder('<%= order.orderID %>')"
-                                class="btn btn-danger btn-sm"
-                            >
-                                Cancel Order
-                            </button>
-                            <% order.items.forEach(item => { %>
-                                <button
-                                    onclick="cancelItem('<%= order.orderID %>', '<%= item._id %>')"
-                                    class="btn btn-danger btn-sm"
-                                >
-                                    Cancel <%= item.product.productName %>
-                                </button>
-                            <% }) %>
-                        <% } %>
                         <% if (order.status === 'Delivered') { %>
                             <button
                                 onclick="returnOrder('<%= order.orderID %>')"
@@ -79,6 +62,7 @@
                                 </button>
                             <% }) %>
                         <% } %>
+                        <a href="/user/orders/<%= order.orderID %>" class="btn btn-info btn-sm">View Details</a>
                         <a href="/user/orders/<%= order.orderID %>/invoice" class="btn btn-success btn-sm">Download Invoice</a>
                     </div>
                 </div>
@@ -90,62 +74,6 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
-function cancelOrder(orderId) {
-    Swal.fire({
-        title: 'Cancel Order',
-        text: 'Are you sure you want to cancel this order? Please provide a reason (optional).',
-        input: 'text',
-        inputPlaceholder: 'Enter cancellation reason (optional)',
-        showCancelButton: true,
-        confirmButtonText: 'Cancel Order',
-        cancelButtonText: 'Keep Order',
-        preConfirm: (reason) => {
-            return fetch(`/user/orders/${orderId}/cancel`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cancellationReason: reason })
-            }).then(response => {
-                if (!response.ok) throw new Error('Failed to cancel order');
-                return response;
-            });
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            Swal.fire('Cancelled!', 'Your order has been cancelled.', 'success').then(() => location.reload());
-        }
-    }).catch((error) => {
-        Swal.fire('Error!', 'Failed to cancel order.', 'error');
-    });
-}
-
-function cancelItem(orderId, itemId) {
-    Swal.fire({
-        title: 'Cancel Item',
-        text: 'Are you sure you want to cancel this item? Please provide a reason (optional).',
-        input: 'text',
-        inputPlaceholder: 'Enter cancellation reason (optional)',
-        showCancelButton: true,
-        confirmButtonText: 'Cancel Item',
-        cancelButtonText: 'Keep Item',
-        preConfirm: (reason) => {
-            return fetch(`/user/orders/${orderId}/cancel`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cancellationReason: reason, itemIds: [itemId] })
-            }).then(response => {
-                if (!response.ok) throw new Error('Failed to cancel item');
-                return response;
-            });
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            Swal.fire('Cancelled!', 'The item has been cancelled.', 'success').then(() => location.reload());
-        }
-    }).catch((error) => {
-        Swal.fire('Error!', 'Failed to cancel item.', 'error');
-    });
-}
-
 function returnOrder(orderId) {
     Swal.fire({
         title: 'Return Order',

@@ -1,6 +1,7 @@
 <%- include('../partials/user/header') %>
 
 <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         .order-details-card {
@@ -13,23 +14,24 @@
             max-width: 50px;
             height: auto;
         }
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 
 <div class="container mt-5">
     <h1 class="text-3xl font-bold mb-6 text-gray-800">Order Details: <%= order.orderID %></h1>
     <a href="/user/orders" class="inline-block mb-6 text-blue-600 hover:underline">Back to Orders</a>
-    <a href="/user/orders/<%= order.orderID %>/invoice" class="btn btn-success btn-sm" target="_blank">
-        Download Invoice (PDF)
-    </a>
     <div class="order-details-card">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <p class="text-gray-600"><strong>Date:</strong> <%= new Date(order.createdAt).toLocaleDateString('en-IN') %></p>
-                <p class="text-gray-600"><strong>Status:</strong> <span class="badge rounded-pill alert-<%= order.status === 'Delivered' ? 'success' : order.status === 'Cancelled' ? 'danger' : 'warning' %>"><%= order.status %></span></p>
+                <p class="text-gray-600"><strong>User:</strong> <%= order.user.name %></p>
+                <p class="text-gray-600"><strong>Shipping Address:</strong> <%= order.shippingAddress.name %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %>, <%= order.shippingAddress.pincode %></p>
                 <p class="text-gray-600"><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
                 <p class="text-gray-600"><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
-                <p class="text-gray-600"><strong>Shipping Address:</strong> <%= order.shippingAddress.name %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %>, <%= order.shippingAddress.pincode %></p>
                 <% if (order.trackingNumber) { %>
                     <p class="text-gray-600"><strong>Tracking Number:</strong> <%= order.trackingNumber %></p>
                 <% } %>
@@ -42,6 +44,47 @@
                 <% if (order.returnReason) { %>
                     <p class="text-gray-600"><strong>Return Reason:</strong> <%= order.returnReason %></p>
                 <% } %>
+
+                <% if (order.status !== 'cancelled' && order.status !== 'delivered') { %>
+                    <div class="mt-4">
+                         <button
+                            onclick="cancelOrder('<%= order.orderID %>')"
+                            class="btn btn-danger btn-sm"
+                        >
+                            Cancel Order
+                        </button>
+                        <% order.items.forEach(item => { %>
+                            <button
+                                onclick="cancelItem('<%= order.orderID %>', '<%= item._id %>')"
+                                class="btn btn-danger btn-sm"
+                            >
+                                Cancel <%= item.product.productName %>
+                            </button>
+                        <% }) %>
+                    </div>
+                <% } %>
+
+                 <% if (order.status === 'delivered') { %>
+                    <div class="mt-4">
+                         <button
+                            onclick="returnOrder('<%= order.orderID %>')"
+                            class="btn btn-warning btn-sm"
+                        >
+                            Return Order
+                        </button>
+                         <% order.items.forEach(item => { %>
+                            <button
+                                onclick="returnItem('<%= order.orderID %>', '<%= item._id %>')"
+                                class="btn btn-warning btn-sm"
+                            >
+                                Return <%= item.product.productName %>
+                            </button>
+                        <% }) %>
+                    </div>
+                <% } %>
+
+                <a href="/user/orders/<%= order.orderID %>/invoice" class="btn btn-success btn-sm mt-4">Download Invoice</a>
+
             </div>
             <div>
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Items</h2>
@@ -64,8 +107,8 @@
                                     <td>₹<%= item.price %></td>
                                     <td>₹<%= item.quantity * item.price %></td>
                                     <td>
-                                        <span class="badge rounded-pill alert-<%= item.status === 'Delivered' ? 'success' : item.status === 'Cancelled' ? 'danger' : 'warning' %>">
-                                            <%= item.status %>
+                                        <span class="badge rounded-pill alert-<%= item.status === 'delivered' ? 'success' : item.status === 'cancelled' ? 'danger' : item.status === 'returned' ? 'info' : 'warning' %> text-dark">
+                                            <%= item.status %> 
                                         </span>
                                     </td>
                                 </tr>
@@ -79,7 +122,160 @@
                 <p class="text-gray-600"><strong>Final Total:</strong> ₹<%= order.finalTotal %></p>
             </div>
         </div>
+
+        <% if (order.status === 'returned') { %>
+            <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Verify Return</h2>
+            <form action="/admin/orders/<%= order.orderID %>/return" method="POST">
+                <textarea
+                    name="adminNotes"
+                    placeholder="Admin Notes"
+                    class="p-2 border rounded w-full mb-4"
+                ><%= order.adminNotes || '' %></textarea>
+                <div class="flex gap-4">
+                    <button
+                        type="submit"
+                        name="verified"
+                        value="true"
+                        class="btn btn-success btn-sm"
+                    >
+                        Approve Return
+                    </button>
+                    <button
+                        type="submit"
+                        name="verified"
+                        value="false"
+                        class="btn btn-danger btn-sm"
+                    >
+                        Reject Return
+                    </button>
+                </div>
+            </form>
+        <% } %>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+function cancelOrder(orderId) {
+    Swal.fire({
+        title: 'Cancel Order',
+        text: 'Are you sure you want to cancel this order? Please provide a reason (optional).',
+        input: 'text',
+        inputPlaceholder: 'Enter cancellation reason (optional)',
+        showCancelButton: true,
+        confirmButtonText: 'Cancel Order',
+        cancelButtonText: 'Keep Order',
+        preConfirm: (reason) => {
+            return fetch(`/user/orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cancellationReason: reason })
+            }).then(response => {
+                if (!response.ok) throw new Error('Failed to cancel order');
+                return response;
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('Cancelled!', 'Your order has been cancelled.', 'success').then(() => location.reload());
+        }
+    }).catch((error) => {
+        Swal.fire('Error!', 'Failed to cancel order.', 'error');
+    });
+}
+
+function cancelItem(orderId, itemId) {
+    Swal.fire({
+        title: 'Cancel Item',
+        text: 'Are you sure you want to cancel this item? Please provide a reason (optional).',
+        input: 'text',
+        inputPlaceholder: 'Enter cancellation reason (optional)',
+        showCancelButton: true,
+        confirmButtonText: 'Cancel Item',
+        cancelButtonText: 'Keep Item',
+        preConfirm: (reason) => {
+            return fetch(`/user/orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cancellationReason: reason, itemIds: [itemId] })
+            }).then(response => {
+                if (!response.ok) throw new Error('Failed to cancel item');
+                return response;
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('Cancelled!', 'The item has been cancelled.', 'success').then(() => location.reload());
+        }
+    }).catch((error) => {
+        Swal.fire('Error!', 'Failed to cancel item.', 'error');
+    });
+}
+
+function returnOrder(orderId) {
+    Swal.fire({
+        title: 'Return Order',
+        text: 'Are you sure you want to return this order? Please provide a reason (mandatory).',
+        input: 'text',
+        inputPlaceholder: 'Enter return reason',
+        showCancelButton: true,
+        confirmButtonText: 'Return Order',
+        cancelButtonText: 'Keep Order',
+        preConfirm: (reason) => {
+            if (!reason) {
+                Swal.showValidationMessage('Return reason is required');
+                return false;
+            }
+            return fetch(`/user/orders/${orderId}/return`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ returnReason: reason })
+            }).then(response => {
+                if (!response.ok) throw new Error('Failed to return order');
+                return response;
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('Returned!', 'Your return request has been submitted.', 'success').then(() => location.reload());
+        }
+    }).catch((error) => {
+        Swal.fire('Error!', 'Failed to return order.', 'error');
+    });
+}
+
+function returnItem(orderId, itemId) {
+    Swal.fire({
+        title: 'Return Item',
+        text: 'Are you sure you want to return this item? Please provide a reason (mandatory).',
+        input: 'text',
+        inputPlaceholder: 'Enter return reason',
+        showCancelButton: true,
+        confirmButtonText: 'Return Item',
+        cancelButtonText: 'Keep Item',
+        preConfirm: (reason) => {
+            if (!reason) {
+                Swal.showValidationMessage('Return reason is required');
+                return false;
+            }
+            return fetch(`/user/orders/${orderId}/return`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ returnReason: reason, itemIds: [itemId] })
+            }).then(response => {
+                if (!response.ok) throw new Error('Failed to return item');
+                return response;
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('Returned!', 'Your return request for the item has been submitted.', 'success').then(() => location.reload());
+        }
+    }).catch((error) => {
+        Swal.fire('Error!', 'Failed to return item.', 'error');
+    });
+}
+</script>
 
 <%- include('../partials/user/footer') %>

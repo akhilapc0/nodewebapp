@@ -31,8 +31,11 @@
                 <p class="text-gray-600"><strong>Shipping Address:</strong> <%= order.shippingAddress.name %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %>, <%= order.shippingAddress.pincode %></p>
                 <p class="text-gray-600"><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
                 <p class="text-gray-600"><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
-                <% if (order.cancellationReason) { %>
-                    <p class="text-gray-600"><strong>Cancellation Reason:</strong> <%= order.cancellationReason %></p>
+                <% if (order.status === 'cancelled') { %>
+                    <p class="text-red-600 font-bold">Order Cancelled</p>
+                    <% if (order.cancellationReason) { %>
+                        <p class="text-gray-600"><strong>Cancellation Reason:</strong> <%= order.cancellationReason %></p>
+                    <% } %>
                 <% } %>
                 <% if (order.returnReason) { %>
                     <p class="text-gray-600"><strong>Return Reason:</strong> <%= order.returnReason %></p>
@@ -59,9 +62,12 @@
                                     <td>₹<%= item.price %></td>
                                     <td>₹<%= item.quantity * item.price %></td>
                                     <td>
-                                        <span class="badge rounded-pill alert-<%= item.status === 'Delivered' ? 'success' : item.status === 'Cancelled' ? 'danger' : 'warning' %>">
-                                            <%= item.status %>
+                                        <span class="badge rounded-pill alert-<%= item.status === 'delivered' ? 'success' : item.status === 'cancelled' ? 'danger' : item.status === 'returned' ? 'info' : 'warning' %>">
+                                            <%= item.status === 'cancelled' ? 'Cancelled' : item.status %>
                                         </span>
+                                        <% if (item.status === 'cancelled' && item.cancellationReason) { %>
+                                            <div class="text-xs text-red-500">Reason: <%= item.cancellationReason %></div>
+                                        <% } %>
                                     </td>
                                 </tr>
                             <% }) %>
@@ -78,12 +84,12 @@
         <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Update Status</h2>
         <form action="/admin/orders/<%= order.orderID %>/status" method="POST" class="flex flex-col md:flex-row gap-4 mb-6">
             <select name="status" class="p-2 border rounded">
-                <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
-                <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                <option value="Out for Delivery" <%= order.status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
-                <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                <option value="Returned" <%= order.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+                <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="out for delivery" <%= order.status === 'out for delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                <option value="delivered" <%= order.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+                <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                <option value="returned" <%= order.status === 'returned' ? 'selected' : '' %>>Returned</option>
             </select>
             <!-- <input
                 type="text"
@@ -101,7 +107,7 @@
             <button type="submit" class="btn btn-primary btn-sm">Update</button>
         </form>
 
-        <% if (order.status === 'Returned') { %>
+        <% if (order.status === 'returned') { %>
             <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Verify Return</h2>
             <form action="/admin/orders/<%= order.orderID %>/return" method="POST">
                 <textarea

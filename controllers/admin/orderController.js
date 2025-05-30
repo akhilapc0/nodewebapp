@@ -58,18 +58,39 @@ exports.getAdminOrderDetails = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { status, trackingNumber, expectedDelivery } = req.body;
+        const { status } = req.body;
+
+        console.log(`Attempting to update order status for orderID: ${orderId}`);
+        console.log(`Received status from frontend: ${status}`);
 
         const order = await Order.findOne({ orderID: orderId });
-        if (!order) return res.render('error', { message: 'Order not found' });
+       
+        if (!order) {
+            console.log(`Order not found for orderID: ${orderId}`);
+            return res.render('error', { message: 'Order not found' });
+        }
 
-        order.status = status;
-        if (trackingNumber) order.trackingNumber = trackingNumber;
-        if (expectedDelivery) order.expectedDelivery = new Date(expectedDelivery);
+        console.log(`Found order. Current status: ${order.status}`);
+
+        // Convert status to lowercase before saving
+        const newStatus = status.toLowerCase();
+        console.log(`Converted status to lowercase: ${newStatus}`);
+
+        // Check if the status is actually changing to prevent unnecessary saves
+        if (order.status === newStatus) {
+            console.log(`Status is already ${newStatus}. No change needed.`);
+            return res.redirect(`/admin/orders/${orderId}`);
+        }
+
+        order.status = newStatus;
+        
+        console.log(`Order status set to: ${order.status}`);
 
         await order.save();
+        console.log('Order saved successfully.');
         res.redirect(`/admin/orders/${orderId}`);
     } catch (error) {
+        console.error("error in updateOrderStatus:", error);
         res.render('error', { message: 'Error updating order status' });
     }
 };
@@ -80,7 +101,9 @@ exports.verifyReturn = async (req, res) => {
         const { orderId } = req.params;
         const { verified, adminNotes } = req.body;
 
-        const order = await Order.findOne({ orderID: orderId });
+         const order = await Order.findOne({ orderID: orderId });
+        
+
         if (!order) return res.render('error', { message: 'Order not found' });
 
         if (order.status !== 'Returned') {

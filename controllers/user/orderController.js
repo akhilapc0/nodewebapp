@@ -66,49 +66,67 @@ exports.cancelOrder = async (req, res) => {
         const order = await Order.findOne({ orderID: orderId });
         if (!order) return res.render('error', { message: 'Order not found' });
 
-        // Prevent cancellation if order is already Delivered or Cancelled
-        if (order.status === 'Delivered' || order.status === 'Cancelled') {
+        // Prevent cancellation if order is already 'delivered' or 'cancelled'
+        if (order.status === 'delivered' || order.status === 'cancelled') {
             return res.render('error', { message: 'Cannot cancel order' });
         }
+
+        const productsToUpdate = {};
 
         if (itemIds && itemIds.length > 0) {
             // Partial cancellation (specific items)
             for (const item of order.items) {
-                if (itemIds.includes(item._id.toString())) {
-                    item.status = 'Cancelled';
+                if (itemIds.includes(item._id.toString()) && item.status !== 'cancelled') {
+                    item.status = 'cancelled';
                     item.cancellationReason = cancellationReason || 'Not specified';
-                    // Increment product stock
-                    await Product.findByIdAndUpdate(item.product, {
-                        $inc: { stock: item.quantity },
-                        stockLastUpdated: Date.now()
-                    });
+                    // Collect product stock to increment
+                    if (productsToUpdate[item.product]) {
+                        productsToUpdate[item.product] += item.quantity;
+                    } else {
+                        productsToUpdate[item.product] = item.quantity;
+                    }
                 }
             }
-            // If all items are cancelled, mark the entire order as Cancelled
-            if (order.items.every(item => item.status === 'Cancelled')) {
-                order.status = 'Cancelled';
+            // If all items are cancelled, mark the entire order as 'cancelled'
+            if (order.items.every(item => item.status === 'cancelled')) {
+                order.status = 'cancelled';
                 order.cancellationReason = cancellationReason || 'Not specified';
             }
         } else {
             // Full order cancellation
-            order.status = 'Cancelled';
-            order.cancellationReason = cancellationReason || 'Not specified';
-            for (const item of order.items) {
-                item.status = 'Cancelled';
-                item.cancellationReason = cancellationReason || 'Not specified';
-                // Increment product stock
-                await Product.findByIdAndUpdate(item.product, {
-                    $inc: { stock: item.quantity },
-                    stockLastUpdated: Date.now()
-                });
-            }
+            // Only cancel if the overall order status is not already 'cancelled'
+             if (order.status !== 'cancelled') {
+                order.status = 'cancelled';
+                order.cancellationReason = cancellationReason || 'Not specified';
+                 for (const item of order.items) {
+                    if(item.status !== 'cancelled'){
+                       item.status = 'cancelled';
+                       item.cancellationReason = cancellationReason || 'Not specified';
+                        // Collect product stock to increment
+                        if (productsToUpdate[item.product]) {
+                            productsToUpdate[item.product] += item.quantity;
+                        } else {
+                            productsToUpdate[item.product] = item.quantity;
+                        }
+                    }
+                }
+             }
         }
 
+        // Save the order changes
         await order.save();
-        const savedOrder = await Order.findById(order._id);
-        console.log('Order saved:', savedOrder);
+
+        // Increment product stock for all cancelled items
+        for (const productId in productsToUpdate) {
+            await Product.findByIdAndUpdate(productId, {
+                $inc: { stock: productsToUpdate[productId] },
+                stockLastUpdated: Date.now()
+            });
+        }
+
         res.redirect('/user/orders');
     } catch (error) {
+        console.error('Error cancelling order:', error);
         res.render('error', { message: 'Error cancelling order' });
     }
 };

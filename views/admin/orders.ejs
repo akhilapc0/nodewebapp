@@ -80,7 +80,7 @@
                             <td>₹<%= order.finalTotal %></td>
                             <td>
                                 <span class="badge rounded-pill alert-<%= order.status === 'Delivered' ? 'success' : order.status === 'Cancelled' ? 'danger' : 'warning' %>">
-                                    <%= order.status %>
+                                    <%= order.status === 'Cancelled' ? 'Cancelled' : order.status %>
                                 </span>
                             </td>
                             <td>
