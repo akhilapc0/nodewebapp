@@ -323,11 +323,11 @@
                             <% } %>
                             
                             <% if (product.productImage && product.productImage[0] && product._id) { %>
-                                <a href="/product/<%= product._id %>" class="item-image">
+                                <a href="/user/productDetails?id=<%= product._id %>" class="item-image">
                                     <img src="/uploads/re-image/<%= product.productImage[0] %>" alt="<%= product.productName || 'Product Image' %>">
                                 </a>
                             <% } else if (product && product._id) { %>
-                                <a href="/product/<%= product._id %>" class="item-image">
+                                <a href="/user/productDetails?id=<%= product._id %>" class="item-image">
                                     <img src="/images/placeholder.png" alt="<%= product.productName || 'Product Image' %>">
                                 </a>
                             <% } %>
@@ -362,7 +362,7 @@
                                     <% } %>
                                     
                                     <% if (product && product._id) { %>
-                                        <a href="/product/<%= product._id %>" class="btn btn-secondary">
+                                        <a href="/user/productDetails?id=<%= product._id %>" class="btn btn-secondary">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     <% } %>
@@ -377,7 +377,7 @@
                 <i class="far fa-heart empty-icon"></i>
                 <h2 class="empty-title">Your Wishlist is Empty</h2>
                 <p class="empty-description">Looks like you haven't added any items to your wishlist yet.</p>
-                <a href="/shop" class="btn btn-shop">Start Shopping</a>
+                <a href="/user/shop" class="btn btn-shop">Start Shopping</a>
             </div>
         <% } %>
     </div>
@@ -399,7 +399,7 @@
 
             if (result.isConfirmed) {
                 try {
-                    const response = await fetch(`/wishlist/remove/${productId}`, {
+                    const response = await fetch(`/user/wishlist/remove/${productId}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -430,7 +430,7 @@
 
         async function addToCartFromWishlist(productId) {
             try {
-                const response = await fetch('/add-to-cart', {
+                const response = await fetch('/user/add-to-cart', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

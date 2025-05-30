@@ -1,0 +1,137 @@
+<%- include("../../views/partials/admin/header") %>
+
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .table img {
+            max-width: 50px;
+            height: auto;
+        }
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<div class="content-header">
+    <div>
+        <h2 class="content-title card-title">Order Details: <%= order.orderID %></h2>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <a href="/admin/orders" class="inline-block mb-6 text-blue-600 hover:underline">Back to Orders</a>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <p class="text-gray-600"><strong>Date:</strong> <%= new Date(order.createdAt).toLocaleDateString('en-IN') %></p>
+                <p class="text-gray-600"><strong>User:</strong> <%= order.user.name %></p>
+                <p class="text-gray-600"><strong>Shipping Address:</strong> <%= order.shippingAddress.name %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %>, <%= order.shippingAddress.pincode %></p>
+                <p class="text-gray-600"><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
+                <p class="text-gray-600"><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
+                <% if (order.cancellationReason) { %>
+                    <p class="text-gray-600"><strong>Cancellation Reason:</strong> <%= order.cancellationReason %></p>
+                <% } %>
+                <% if (order.returnReason) { %>
+                    <p class="text-gray-600"><strong>Return Reason:</strong> <%= order.returnReason %></p>
+                <% } %>
+            </div>
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Items</h2>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% order.items.forEach(item => { %>
+                                <tr>
+                                    <td><%= item.product.productName %></td>
+                                    <td><%= item.quantity %></td>
+                                    <td>₹<%= item.price %></td>
+                                    <td>₹<%= item.quantity * item.price %></td>
+                                    <td>
+                                        <span class="badge rounded-pill alert-<%= item.status === 'Delivered' ? 'success' : item.status === 'Cancelled' ? 'danger' : 'warning' %>">
+                                            <%= item.status %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-4 text-gray-600"><strong>Subtotal:</strong> ₹<%= order.subtotal %></p>
+                <p class="text-gray-600"><strong>Tax:</strong> ₹<%= order.tax %></p>
+                <p class="text-gray-600"><strong>Discount:</strong> ₹<%= order.discount %></p>
+                <p class="text-gray-600"><strong>Final Total:</strong> ₹<%= order.finalTotal %></p>
+            </div>
+        </div>
+
+        <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Update Status</h2>
+        <form action="/admin/orders/<%= order.orderID %>/status" method="POST" class="flex flex-col md:flex-row gap-4 mb-6">
+            <select name="status" class="p-2 border rounded">
+                <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+                <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="Out for Delivery" <%= order.status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                <option value="Returned" <%= order.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+            </select>
+            <!-- <input
+                type="text"
+                name="trackingNumber"
+                placeholder="Tracking Number"
+                value="<%= order.trackingNumber || '' %>"
+                class="p-2 border rounded"
+            >
+            <input
+                type="date"
+                name="expectedDelivery"
+                value="<%= order.expectedDelivery ? order.expectedDelivery.toISOString().split('T')[0] : '' %>"
+                class="p-2 border rounded"
+            > -->
+            <button type="submit" class="btn btn-primary btn-sm">Update</button>
+        </form>
+
+        <% if (order.status === 'Returned') { %>
+            <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Verify Return</h2>
+            <form action="/admin/orders/<%= order.orderID %>/return" method="POST">
+                <textarea
+                    name="adminNotes"
+                    placeholder="Admin Notes"
+                    class="p-2 border rounded w-full mb-4"
+                ><%= order.adminNotes || '' %></textarea>
+                <div class="flex gap-4">
+                    <button
+                        type="submit"
+                        name="verified"
+                        value="true"
+                        class="btn btn-success btn-sm"
+                    >
+                        Approve Return
+                    </button>
+                    <button
+                        type="submit"
+                        name="verified"
+                        value="false"
+                        class="btn btn-danger btn-sm"
+                    >
+                        Reject Return
+                    </button>
+                </div>
+            </form>
+        <% } %>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<%- include("../../views/partials/admin/footer") %>

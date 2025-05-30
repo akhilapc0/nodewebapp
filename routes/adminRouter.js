@@ -5,6 +5,7 @@ const customerController = require("../controllers/admin/customerController");
 const categoryController = require("../controllers/admin/categoryController");
 const brandController = require("../controllers/admin/brandController");
 const productController = require("../controllers/admin/productController");
+const orderController = require("../controllers/admin/orderController"); // New import for order management
 const multer = require('multer');
 const storage = require('../helpers/multer');
 const uploads = multer({ storage: storage });
@@ -49,4 +50,20 @@ router.get("/editProduct", adminAuth, productController.getEditProduct);
 router.post("/editProduct/:id", adminAuth, uploads.array("images", 4), productController.editProduct);
 router.post("/deleteImage", adminAuth, productController.deleteSingleImage);
 
-module.exports = router;
+// Order management routes (new)
+router.get("/orderList", adminAuth, orderController.getAllOrders);
+router.get("/orders/:orderId", adminAuth, orderController.getAdminOrderDetails);
+router.post("/orders/:orderId/status", adminAuth, orderController.updateOrderStatus);
+router.post("/orders/:orderId/return", adminAuth, orderController.verifyReturn);
+
+module.exports = router; 
+
+
+
+
+
+
+
+
+
+

@@ -100,7 +100,7 @@ const forgotEmailValid = async (req, res) => {
         }
 
     } catch (error) {
-        return res.redirect("/pageNotFound");
+        return res.redirect("/user/pageNotFound");
     }
 }
 
@@ -118,7 +118,7 @@ const getForgotPassPage=async(req,res)=>{
 
     }
     catch(error){
-        res.redirect("/pageNotFound");
+        res.redirect("/user/pageNotFound");
     }
 }
 
@@ -145,7 +145,7 @@ const getResetPassPage=async(req,res)=>{
 
     }
     catch(error){
-        res.redirect("/pageNotFound")
+        res.redirect("/user/pageNotFound")
     }
 }
 
@@ -181,14 +181,14 @@ const postNewPassword=async(req,res)=>{
                 {email:email},
                 {$set:{password:passwordHash}}
             )
-            res.redirect("/login");
+            res.redirect("/user/login");
 
         }else{
             res.render("reset-password",{message:"passwords do not match"});
         }
     }
     catch(error){
-        res.redirect("/pageNotFound");
+        res.redirect("/user/pageNotFound");
 
     }
 }
@@ -198,12 +198,12 @@ const userProfile = async (req, res) => {
     try {
         const userId = req.session.user;
         if (!userId) {
-            return res.redirect('/login');
+            return res.redirect('/user/login');
         }
 
         const userData = await User.findById(userId);
         if (!userData) {
-            return res.redirect('/login');
+            return res.redirect('/user/login');
         }
 
         // Check if profile image file exists
@@ -237,7 +237,7 @@ const changeEmail=async (req,res)=>{
         res.render("change-email", { message: null });
     }
     catch(error){
-        res.redirect("/pageNotFound")
+        res.redirect("/user/pageNotFound")
     }
 }
 
@@ -271,7 +271,7 @@ const changeEmailValid=async(req,res)=>{
     }
     catch(error){
         console.error("Error in changeEmailValid:", error);
-        res.redirect("/pageNotFound")
+        res.redirect("/user/pageNotFound")
     }
 }
 
@@ -296,7 +296,7 @@ const verifyEmailOtp=async(req,res)=>{
     }
     catch(error){
         console.log("error in the verificationEmailOtp:",error)
-        res.redirect("/pageNotFound")
+        res.redirect("/user/pageNotFound")
 
     }
 }
@@ -309,7 +309,7 @@ const updateEmail=async(req,res)=>{
             return res.render('new-email', { userData: req.session.userData, message: 'Missing new email or user session.' });
         }
         await User.findByIdAndUpdate(userId,{email:newEmail});
-        res.redirect("/profile")
+        res.redirect("/user/profile")
     }
     catch(error){
         console.error("error updating email:",error)
@@ -326,7 +326,7 @@ const changePassword=async(req,res)=>{
     }
     catch(error){
 
-        res.redirect("/pageNotFound")
+        res.redirect("/user/pageNotFound")
 
     }
 
@@ -363,7 +363,7 @@ const changePasswordValid=async(req,res)=>{
     catch(error){
 
       console.log("error in change password validation",error)
-      res.redirect("/pageNotFound")
+      res.redirect("/user/pageNotFound")
       
 
 
@@ -417,7 +417,7 @@ const addAddress = async (req, res) => {
         });
     } catch (error) {
         console.error("Error in addAddress:", error);
-        res.redirect("/pageNotFound");
+        res.redirect("/user/pageNotFound");
     }
 };
 
@@ -476,12 +476,12 @@ const editAddress = async (req, res) => {
         
         const userAddress = await Address.findOne({ userId });
         if (!userAddress) {
-            return res.redirect("/profile");
+            return res.redirect("/user/profile");
         }
 
         const address = userAddress.address.id(addressId);
         if (!address) {
-            return res.redirect("/profile");
+            return res.redirect("/user/profile");
         }
 
         res.render("edit-address", {
@@ -491,7 +491,7 @@ const editAddress = async (req, res) => {
         });
     } catch (error) {
         console.error("Error in editAddress:", error);
-        res.redirect("/profile");
+        res.redirect("/user/profile");
     }
 };
 
@@ -512,13 +512,13 @@ const updateAddress = async (req, res) => {
 
         const userAddress = await Address.findOne({ userId });
         if (!userAddress) {
-            return res.redirect("/profile");
+            return res.redirect("/user/profile");
         }
 
         
         const address = userAddress.address.id(addressId);
         if (!address) {
-            return res.redirect("/profile");
+            return res.redirect("/user/profile");
         }
 
         
@@ -532,7 +532,7 @@ const updateAddress = async (req, res) => {
         address.altPhone = altPhone;
 
         await userAddress.save();
-        res.redirect("/profile");
+        res.redirect("/user/profile");
     } catch (error) {
         console.error("Error in updateAddress:", error);
         res.render("edit-address", {
@@ -581,7 +581,7 @@ const updateProfileImage = async (req, res) => {
         user.profileImage = req.file.filename;
         await user.save();
 
-        res.redirect('/profile');
+        res.redirect('/user/profile');
     } catch (error) {
         console.error('Error updating profile image:', error);
         res.status(500).json({ success: false, message: 'Error updating profile image' });
@@ -593,7 +593,7 @@ const getEditProfile = async (req, res) => {
     try {
         const userId = req.session.user;
         const user = await User.findById(userId);
-        if (!user) return res.redirect('/login');
+        if (!user) return res.redirect('/user/login');
         res.render('edit-profile', { user, message: null });
     } catch (error) {
         res.render('error', { message: 'Error loading edit profile page.' });
@@ -619,7 +619,7 @@ const postEditProfile = async (req, res) => {
         }
 
         await User.findByIdAndUpdate(userId, updateData);
-        res.redirect('/profile');
+        res.redirect('/user/profile');
     } catch (error) {
         console.error('Error updating profile:', error);
         const user = await User.findById(req.session.user);

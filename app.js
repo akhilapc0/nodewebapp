@@ -7,7 +7,8 @@ const env = require("dotenv").config();
 const db = require("./config/db");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
-
+const userController = require("./controllers/user/userController");
+const MongoStore = require('connect-mongo');
 // Database connection
 db().then(() => {
     console.log("Database connected successfully");
@@ -16,11 +17,18 @@ db().then(() => {
     process.exit(1);
 });
 
+
 // Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI, // MongoDB connection string from environment
+        ttl: 14 * 24 * 60 * 60, // Session TTL = 14 days
+        collectionName: "sessions", // Collection name in MongoDB
+        autoRemove: 'native' // Let MongoDB handle expired session removal
+    }),
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
@@ -49,8 +57,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/', userRouter);
+app.use('/user', userRouter);
 app.use('/admin', adminRouter);
+
+// Add route for the homepage
+app.get('/', userController.loadHomePage);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

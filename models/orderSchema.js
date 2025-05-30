@@ -1,96 +1,155 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
+const shortid = require('shortid'); // For generating human-friendly orderIDs
 
-// Sub-schema for order items (matches the structure of cart items in cartSchema.js)
+// Sub-schema for order items
 const orderItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'product', // References the 'product' model (same as in cartSchema.js)
+    ref: 'Product',
     required: true
   },
   quantity: {
     type: Number,
     required: true,
-    default: 1,
     min: 1
   },
   price: {
     type: Number,
-    required: true // Store the product price at the time of order placement
+    required: true
+  },
+  status: {  // Individual item status
+    type: String,
+    enum: ['ordered', 'cancelled', 'returned', 'delivered'],
+    default: 'ordered'
+  },
+  cancelReason: {
+    type: String
+  },
+  returnReason: {
+    type: String
   }
 });
 
 // Main order schema
 const orderSchema = new mongoose.Schema({
+  orderID: {
+    type: String,
+    unique: true,
+    default: shortid.generate
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // References the 'User' model (same as userId in addressSchema.js and user in cartSchema.js)
+    ref: 'User',
     required: true
   },
-  items: [orderItemSchema], // Array of items, copied from the cart
+  items: [orderItemSchema],
   subtotal: {
     type: Number,
-    required: true // Sum of price * quantity for all items
+    required: true
   },
   tax: {
     type: Number,
-    default: 0 // Optional tax amount (e.g., 10% of subtotal)
+    default: 0
   },
   discount: {
     type: Number,
-    default: 0 // Optional discount amount (e.g., 5% of subtotal)
+    default: 0
   },
   finalTotal: {
     type: Number,
-    required: true // Final amount: subtotal + tax - discount
+    required: true
   },
   shippingAddress: {
-    // Matches the structure of an address object in addressSchema.js
-    addressType: {
-      type: String,
-      required: true
-    },
-    name: {
-      type: String,
-      required: true
-    },
-    city: {
-      type: String,
-      required: true
-    },
-    landMark: {
-      type: String,
-      required: true
-    },
-    state: {
-      type: String,
-      required: true
-    },
-    pincode: {
-      type: Number,
-      required: true
-    },
-    phone: {
-      type: String,
-      required: true
-    },
-    altPhone: {
-      type: String,
-      required: true
-    }
+    addressType: String,
+    name: String,
+    city: String,
+    landMark: String,
+    state: String,
+    pincode: Number,
+    phone: String,
+    altPhone: String
   },
   paymentMethod: {
     type: String,
-    default: 'Cash on Delivery' // As per your requirement
+    enum: ['COD', 'Razorpay'],
+    required: true
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'refunded'],
+    default: 'pending'
   },
   status: {
     type: String,
-    default: 'Pending' // Initial status of the order
-  }
-}, { timestamps: true }); // Adds createdAt and updatedAt fields
+    enum: ['pending', 'shipped', 'out for delivery', 'delivered', 'cancelled'],
+    default: 'pending'
+  },
+  cancelReason: {
+    type: String
+  },
+  returnRequest: {
+    requested: {
+      type: Boolean,
+      default: false
+    },
+    reason: {
+      type: String
+    },
+    verified: {
+      type: Boolean,
+      default: false
+    }
+  },
+  refund: {
+    refunded: {
+      type: Boolean,
+      default: false
+    },
+    amount: {
+      type: Number
+    }
+  },
+  orderDate: {
+    type: Date,
+    default: Date.now
+  },
+  adminNotes: String,         // For internal admin comments
+  trackingNumber: String,     // For shipped orders
+  expectedDelivery: Date      // Estimated delivery date
+}, { 
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
 
-// Create the Order model
+// Virtual for formatted order date
+orderSchema.virtual('formattedDate').get(function() {
+  return this.createdAt.toLocaleDateString('en-IN');
+});
+
+// Pre-save hook to ensure consistency
+orderSchema.pre('save', function(next) {
+  // Auto-update payment status for COD orders
+  if (this.paymentMethod === 'COD' && this.isModified('status')) {
+    if (this.status === 'delivered') {
+      this.paymentStatus = 'paid';
+    }
+  }
+  next();
+});
+
+// Static method for order search
+orderSchema.statics.searchOrders = async function(query) {
+  return this.find({
+    $or: [
+      { orderID: { $regex: query, $options: 'i' } },
+      { 'user.name': { $regex: query, $options: 'i' } },
+      { trackingNumber: { $regex: query, $options: 'i' } }
+    ]
+  }).populate('user items.product');
+};
+
 const Order = mongoose.model('Order', orderSchema);
 
-// Export the model
 module.exports = Order;

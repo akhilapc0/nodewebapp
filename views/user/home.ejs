@@ -180,7 +180,7 @@
                         <div class="product-cart-wrap mb-30">
                             <div class="product-img-action-wrap">
                                 <div class="product-img product-img-zoom">
-                                    <a href="/productDetails?id=<%=products[i]._id%>">
+                                    <a href="/user/productDetails?id=<%=products[i]._id%>">
                                         <img class="default-img" src="/uploads/re-image/<%=products[i].productImage[0]%>" alt="<%=products[i].productName%>">
                                     </a>
                                 </div>
@@ -195,7 +195,7 @@
                             <div class="product-content-wrap">
                                 <h6><%=products[i].productName%></h6>
                                 <h5><%=products[i].salesPrice%></h5>
-                                <a href=""></a>
+                                <a href="/user/productDetails?id=<%=products[i]._id%>" class="btn-view-details">View Details</a>
                             </div>
                         </div>
                     </div>

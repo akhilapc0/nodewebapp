@@ -5,7 +5,7 @@
     <div class="container">
         <h1 class="display-1 fw-bold mb-4" style="font-family: 'Playfair Display', serif;">Essence Elegance</h1>
         <p class="lead mb-4" style="font-size: 1.5rem;">Discover the art of fragrance</p>
-        <a href="/shop" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 30px; text-transform: uppercase; letter-spacing: 2px;">Shop Now</a>
+        <a href="/user/shop" class="btn btn-light btn-lg px-5 py-3" style="border-radius: 30px; text-transform: uppercase; letter-spacing: 2px;">Shop Now</a>
     </div>
 </section>
 
@@ -62,7 +62,7 @@
                             <p class="text-muted mb-2"><%= product.brand.brandName %></p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="h5 mb-0">₹<%= product.salesPrice %></span>
-                                <a href="/productDetails?id=<%= product._id %>" class="btn btn-outline-dark btn-sm">View Details</a>
+                                <a href="/user/productDetails?id=<%= product._id %>" class="btn btn-outline-dark btn-sm">View Details</a>
                             </div>
                         </div>
                     </div>

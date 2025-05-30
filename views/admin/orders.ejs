@@ -1,0 +1,113 @@
+<%- include("../../views/partials/admin/header") %>
+
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .table img {
+            max-width: 50px;
+            height: auto;
+        }
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<div class="content-header">
+    <div>
+        <h2 class="content-title card-title">Orders</h2>
+    </div>
+</div>
+
+<header class="card-header text-center mb-20">
+    <form action="/admin/orders" method="GET" class="d-inline">
+        <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin-left: 230px;">
+            <input
+                type="text"
+                name="search"
+                placeholder="Search by Order ID, User, or Tracking..."
+                value="<%= search || '' %>"
+                class="form-control border-0 rounded-pill"
+            >
+            <button class="btn border-0" type="submit">Search</button>
+        </div>
+        <div class="mt-3 flex justify-center gap-3">
+            <select name="status" class="p-2 border rounded">
+                <option value="">All Statuses</option>
+                <option value="Pending" <%= status === 'Pending' ? 'selected' : '' %>>Pending</option>
+                <option value="Shipped" <%= status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="Out for Delivery" <%= status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                <option value="Delivered" <%= status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                <option value="Cancelled" <%= status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                <option value="Returned" <%= status === 'Returned' ? 'selected' : '' %>>Returned</option>
+            </select>
+            <select name="sortBy" class="p-2 border rounded">
+                <option value="createdAt" <%= sortBy === 'createdAt' ? 'selected' : '' %>>Order Date</option>
+                <option value="finalTotal" <%= sortBy === 'finalTotal' ? 'selected' : '' %>>Total</option>
+            </select>
+            <select name="sortOrder" class="p-2 border rounded">
+                <option value="desc" <%= sortOrder === 'desc' ? 'selected' : '' %>>Descending</option>
+                <option value="asc" <%= sortOrder === 'asc' ? 'selected' : '' %>>Ascending</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+            <a href="/admin/orders" class="btn btn-secondary btn-sm">Clear Filters</a>
+        </div>
+    </form>
+</header>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% orders.forEach(order => { %>
+                        <tr>
+                            <td><%= order.orderID %></td>
+                            <td><%= new Date(order.createdAt).toLocaleDateString('en-IN') %></td>
+                            <td><%= order.user.name %></td>
+                            <td>₹<%= order.finalTotal %></td>
+                            <td>
+                                <span class="badge rounded-pill alert-<%= order.status === 'Delivered' ? 'success' : order.status === 'Cancelled' ? 'danger' : 'warning' %>">
+                                    <%= order.status %>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/admin/orders/<%= order.orderID %>" class="btn btn-info btn-sm">View</a>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-3">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center mb-20">
+            <% for (let i = 1; i <= Math.ceil(total / limit); i++) { %>
+                <li class="page-item <%= (i === page) ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= i %>&search=<%= search || '' %>&status=<%= status || '' %>&sortBy=<%= sortBy %>&sortOrder=<%= sortOrder %>"><%= i %></a>
+                </li>
+            <% } %>
+        </ul>
+    </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<%- include("../../views/partials/admin/footer") %>

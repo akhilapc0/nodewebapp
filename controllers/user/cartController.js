@@ -61,7 +61,7 @@ const getCart = async (req, res) => {
     
     if (!userId) {
       console.log('No user ID in session, redirecting to login');
-      return res.redirect('/login');
+      return res.redirect('/user/login');
     }
 
     const cart = await Cart.findOne({ user: userId })
@@ -220,7 +220,7 @@ const loadCheckout = async (req, res) => {
     console.log('[loadCheckout] User ID:', userId);
     if (!userId) {
       console.log('[loadCheckout] No user ID in session, redirecting to login');
-      return res.redirect('/login');
+      return res.redirect('/user/login');
     }
 
     console.log('[loadCheckout] Fetching cart...');
@@ -270,7 +270,7 @@ const loadCheckout = async (req, res) => {
 
     if (!cart || validItems.length === 0) {
       console.log('[loadCheckout] Cart is empty or invalid, redirecting to cart page.');
-      return res.redirect('/cart');
+      return res.redirect('/user/cart');
     }
 
     console.log('[loadCheckout] Calculating tax, discount, and final total...');
@@ -339,7 +339,10 @@ const placeOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: 'No shipping addresses found. Please add one.' });
     }
 
+    console.log('Received addressId:', addressId);
     const selectedAddress = addressData.address.id(addressId); // Find selected address by ID
+    console.log('Found selectedAddress:', selectedAddress);
+
     if (!selectedAddress) {
       // Send JSON response if selected address not found
       return res.status(404).json({ success: false, message: 'Selected shipping address not found.' });
@@ -386,10 +389,12 @@ const placeOrder = async (req, res) => {
         altPhone: selectedAddress.altPhone // Include altPhone from selectedAddress
       },
       paymentMethod: paymentMethod, // Use selected payment method from req.body
-      status: paymentMethod === 'COD' ? 'Pending' : 'Payment Pending' // Set initial status based on payment method
+      status: 'pending' // Use only allowed enum value
     });
 
     await order.save();
+    const savedOrder = await Order.findById(order._id); // Fetch the saved order to get the correct orderID
+    console.log('Order saved:', savedOrder);
 
     // Clear cart only if order is successfully created
     cart.items = [];
@@ -397,11 +402,11 @@ const placeOrder = async (req, res) => {
 
     // For COD, send JSON success response with orderId
     if (paymentMethod === 'COD') {
-        res.json({ success: true, orderId: order._id });
+        res.json({ success: true, orderId: savedOrder.orderID });
     } else if (paymentMethod === 'Razorpay') {
         // Handle Razorpay payment initiation here
         // For now, sending a success response (will need further implementation)
-         res.json({ success: true, orderId: order._id, message: 'Razorpay payment initiated' });
+         res.json({ success: true, orderId: savedOrder.orderID, message: 'Razorpay payment initiated' });
     }
 
   } catch (err) {

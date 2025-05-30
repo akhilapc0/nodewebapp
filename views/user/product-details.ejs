@@ -98,7 +98,7 @@
                                              <button type="submit" class="button button-add-to-cart" onclick="addToCart('<%= product._id %>')">Add to cart</button>
                                              <a aria-label="Add To Wishlist" class="action-btn hover-up" href="#" onclick="addToWishlist('<%= product._id %>')"><i class="fi-rs-heart"></i></a>
                                          <% } else { %>
-                                             <a href="/login" class="button button-add-to-cart">Login to Add to Cart</a>
+                                             <a href="/user/login" class="button button-add-to-cart">Login to Add to Cart</a>
                                          <% } %>
                                      </div>
                                  </div>
@@ -189,8 +189,8 @@ function decrementQuantity() {
 }
 
 function addToCart(productId) {
-    const quantity = document.getElementById('quantity').textContent;
-    fetch('/add-to-cart', {
+    const quantity = parseInt(document.getElementById('quantity').textContent);
+    fetch('/user/add-to-cart', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -203,14 +203,28 @@ function addToCart(productId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Product added to cart!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Added to Cart!',
+                text: data.message,
+                timer: 1500,
+                showConfirmButton: false
+            });
         } else {
-            alert(data.message || 'Error adding product to cart');
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: data.error || 'Failed to add to cart'
+            });
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error adding product to cart');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Failed to add to cart'
+        });
     });
 }
 

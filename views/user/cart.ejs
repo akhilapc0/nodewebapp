@@ -195,7 +195,7 @@
     <% } else { %>
       <% cart.items.forEach(item => { %>
         <div class="cart-item" id="cart-item-<%= item.product._id %>">
-          <a href="/product/<%= item.product._id %>" class="item-image">
+          <a href="/user/productDetails?id=<%= item.product._id %>" class="item-image">
             <img src="/uploads/re-image/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>">
           </a>
           
@@ -234,7 +234,7 @@
         </div>
       </div>
 
-      <button class="checkout-btn" onclick="window.location.href='/checkout'">
+      <button class="checkout-btn" onclick="window.location.href='/user/checkout'">
         Proceed to Checkout
       </button>
     <% } %>
@@ -245,7 +245,7 @@
   <script>
     async function updateQuantity(productId, action) {
       try {
-        const response = await fetch('/cart/update-quantity', {
+        const response = await fetch('/user/cart/update-quantity', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -281,7 +281,7 @@
             Swal.fire({
               icon: 'warning',
               title: 'Oops!',
-              text: data.error === 'Maximum quantity reached' ? 'Maximum quantity reached' : 'Minimum quantity reached',
+              text: data.error === 'Maximum quantity reached' ? 'Maximum stock reached' : 'Minimum stock reached',
               confirmButtonColor: '#3085d6'
             });
           }
@@ -310,7 +310,7 @@
 
       if (result.isConfirmed) {
         try {
-          const response = await fetch(`/cart/remove/${productId}`, {
+          const response = await fetch(`/user/cart/remove/${productId}`, {
             method: 'GET'
           });
 
@@ -359,7 +359,7 @@
 
     async function updateTotalPrice() {
       try {
-        const response = await fetch('/cart');
+        const response = await fetch('/user/cart');
         const html = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');

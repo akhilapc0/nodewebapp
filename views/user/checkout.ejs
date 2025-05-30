@@ -407,57 +407,43 @@ document.querySelectorAll('.set-default').forEach(button => {
 
 // Place order
 async function placeOrder() {
-  const selectedAddress = document.querySelector('input[name="address"]:checked');
-  
-  if (!selectedAddress) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'No Address Selected',
-      text: 'Please select a delivery address'
-    });
-    return;
-  }
-
-  const selectedPaymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-  if (!selectedPaymentMethod) {
-       Swal.fire({
-         icon: 'warning',
-         title: 'No Payment Method Selected',
-         text: 'Please select a payment method'
-       });
-       return;
-  }
-
   try {
-    const response = await fetch('/place-order', {
+    const selectedAddressElement = document.querySelector('input[name="address"]:checked');
+    if (!selectedAddressElement) {
+      Swal.fire('Error', 'Please select a delivery address.', 'error');
+      return;
+    }
+    const addressId = selectedAddressElement.value;
+
+    const selectedPaymentMethodElement = document.querySelector('input[name="paymentMethod"]:checked');
+    if (!selectedPaymentMethodElement) {
+      Swal.fire('Error', 'Please select a payment method.', 'error');
+      return;
+    }
+    const paymentMethod = selectedPaymentMethodElement.value;
+
+    // Make the API call to place the order
+    const response = await fetch('/user/place-order', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        addressId: selectedAddress.value,
-        paymentMethod: selectedPaymentMethod.value
-      })
+      body: JSON.stringify({ addressId, paymentMethod }),
     });
 
-    if (response.ok) {
-      const result = await response.json();
-      window.location.href = `/order/success/${result.orderId}`;
+    const data = await response.json();
+
+    if (data.success) {
+      // Redirect to order success page
+      window.location.href = `/user/order/success/${data.orderId}`;
     } else {
-      const error = await response.json();
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: error.message || 'Failed to place order'
-      });
+      // Show error message
+      Swal.fire('Error', data.message || 'Failed to place order', 'error');
     }
+
   } catch (error) {
-    console.error('Error:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Failed to place order'
-    });
+    console.error('Error placing order:', error);
+    Swal.fire('Error', 'Failed to place order. Please try again.', 'error');
   }
 }
 </script>

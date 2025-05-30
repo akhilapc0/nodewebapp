@@ -243,7 +243,7 @@ const loadLogin = async (req, res) => {
             const message = req.query.message || null;
             return res.render("login", { message });
         } else {
-            res.redirect('/')
+            res.redirect('/user/')
         }
     }
     catch (error) {
@@ -280,8 +280,8 @@ const login = async (req, res) => {
         // Set user session
         req.session.user = findUser._id;
         
-        // Redirect to home page
-        res.redirect('/');
+        // Redirect to user homepage
+        res.redirect('/user/');
     } catch (error) {
         console.error("Login error:", error);
         res.render("login", { message: "Login failed. Please try again later." });
@@ -305,7 +305,7 @@ const logout = async (req, res) => {
             res.clearCookie('connect.sid');
             
         
-            return res.redirect("/login");
+            return res.redirect("/user/login");
         });
     } catch (error) {
         console.log("logout error", error);
@@ -436,7 +436,7 @@ const loadProductDetails = async (req, res) => {
     try {
         const productId = req.query.id;
         if (!productId) {
-            return res.redirect('/shop');
+            return res.redirect('/user/shop');
         }
 
         const user = req.session.user;
@@ -447,7 +447,7 @@ const loadProductDetails = async (req, res) => {
             .populate('brand');
 
         if (!product) {
-            return res.redirect('/shop');
+            return res.redirect('/user/shop');
         }
 
         res.render('product-details', {
@@ -460,7 +460,7 @@ const loadProductDetails = async (req, res) => {
 
     } catch (error) {
         console.error('Error in loadProductDetails:', error);
-        res.redirect('/shop');
+        res.redirect('/user/shop');
     }
 };
 
@@ -547,7 +547,7 @@ const loadWishlist = async (req, res) => {
         // Check if user is logged in
         if (!userId) {
             console.log('No user ID in session, redirecting to login for wishlist');
-            return res.redirect('/login');
+            return res.redirect('/user/login');
         }
 
         const userData = await User.findOne({ _id: userId });
@@ -561,7 +561,7 @@ const loadWishlist = async (req, res) => {
                 res.set('Expires', '0');
                 res.set('Pragma', 'no-cache');
                 res.clearCookie('connect.sid');
-                return res.redirect('/login?message=Session invalid. Please login again.');
+                return res.redirect('/user/login?message=Session invalid. Please login again.');
             });
             return;
         }

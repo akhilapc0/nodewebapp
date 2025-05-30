@@ -128,7 +128,7 @@
                         <% if (message) { %>
                             <div class="alert alert-danger text-center"><%= message %></div>
                         <% } %>
-                        <form action="/login" method="POST" id="loginForm">
+                        <form action="/user/login" method="POST" id="loginForm">
                             <div class="form-group mb-3">
                 <label for="email">Email address</label>
                                 <input type="email" class="form-control" id="email" name="email" required>
@@ -141,8 +141,8 @@
                                 <button type="submit" class="btn btn-primary">Login</button>
               </div>
                             <div class="text-center mt-3">
-                                <p>Don't have an account? <a href="/signup">Sign up</a></p>
-                                <p><a href="/forgot-password">Forgot Password?</a></p>
+                                <p>Don't have an account? <a href="/user/signup">Sign up</a></p>
+                                <p><a href="/user/forgot-password">Forgot Password?</a></p>
               </div>
                         </form>
                 </div>

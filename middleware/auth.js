@@ -20,7 +20,7 @@ const userAuth = (req, res, next) => {
                             console.log("session destruction error", err.message);
                             return res.redirect("/pageNotFound");
                         }
-                        return res.redirect("/login?message=Your account has been blocked");
+                        return res.redirect("/user/login?message=Your account has been blocked");
                     });
                 }
             })
@@ -29,7 +29,7 @@ const userAuth = (req, res, next) => {
                 res.status(500).send("internal server error");
             });
     } else {
-        res.redirect("/login");
+        res.redirect("/user/login");
     }
 };
 

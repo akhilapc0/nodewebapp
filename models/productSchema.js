@@ -1,66 +1,61 @@
-const mongoose=require('mongoose');
-const {Schema}=mongoose;
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const productSchema=new Schema({
-    productName:{
-        type:String,
-        required:true
+const productSchema = new Schema({
+    productName: {
+        type: String,
+        required: true
     },
-    description:{
-        type:String,
-        required:true
+    description: {
+        type: String,
+        required: true
     },
-    brand:{
-        type:Schema.Types.ObjectId,
-        ref:"Brand",
-        required:true
+    brand: {
+        type: Schema.Types.ObjectId,
+        ref: "Brand",
+        required: true
     },
-    category:{
-        type:Schema.Types.ObjectId,
-        ref:"category",
-        required:true
+    category: {
+        type: Schema.Types.ObjectId,
+        ref: "category",
+        required: true
     },
-    regularPrice:{
-        type:Number,
-        required:true
+    regularPrice: {
+        type: Number,
+        required: true
     },
-    salesPrice:{
-        type:Number,
-        required:true
+    salesPrice: {
+        type: Number,
+        required: true
     },
-    productOffer:{
-        type:Number,
-        default:0,
-
+    productOffer: {
+        type: Number,
+        default: 0
     },
-    quantity:{
-        type:Number,
-        default:0
+    stock: {
+        type: Number,
+        default: 0,
+        min: 0 // Ensures stock is never negative
     },
-    // color:{
-    //     type:String,
-    //     required:true
-    // },
-    productImage:{
-        type:[String],
-        required:true
+    productImage: {
+        type: [String],
+        required: true
     },
-    isBlocked:{
-        type:Boolean,
-        default:false
+    isBlocked: {
+        type: Boolean,
+        default: false
     },
-    status:{
-        type:String,
-        enum:["Available","out of stock","Discountiued"],
-        required:true,
-        default:"Available"
+    status: {
+        type: String,
+        enum: ["Available", "out of stock", "Discontinued"], // Fixed typo
+        required: true,
+        default: "Available"
     },
-    createdOn:{
-        type:Date,
-        default:Date.now
+    stockLastUpdated: { // Optional field to track when stock was last updated
+        type: Date,
+        default: Date.now
     }
+}, { timestamps: true });
 
-},{timestamps:true})
-
-const product = mongoose.model("Product",productSchema);
-module.exports = product;
+const Product = mongoose.model("Product", productSchema);
+module.exports = Product;
