@@ -82,4 +82,7 @@ router.post('/orders/:orderId/cancel', userAuth, orderController.cancelOrder);
 router.post('/orders/:orderId/return', userAuth, orderController.requestReturn);
 router.get('/orders/:orderId/invoice', userAuth, orderController.downloadInvoice);
 
+// User notifications route
+router.get('/notifications', orderController.getUserNotifications);
+
 module.exports = router;

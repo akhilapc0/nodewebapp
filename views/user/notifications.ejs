@@ -1,0 +1,19 @@
+<%- include('../partials/user/header') %>
+
+<div class="container mt-5">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">Notifications</h1>
+    <% if (notifications && notifications.length > 0) { %>
+        <ul class="list-group">
+            <% notifications.slice().reverse().forEach(note => { %>
+                <li class="list-group-item <%= note.read ? 'text-gray-500' : 'text-black' %>">
+                    <div><%= note.message %></div>
+                    <div class="text-xs text-gray-400"><%= new Date(note.date).toLocaleString('en-IN') %></div>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <div class="alert alert-info">No notifications yet.</div>
+    <% } %>
+</div>
+
+<%- include('../partials/user/footer') %> 

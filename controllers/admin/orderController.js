@@ -1,4 +1,5 @@
 const Order = require('../../models/orderSchema');
+const User = require('../../models/userSchema');
 
 // Get all orders with pagination, search, sort, and filter
 exports.getAllOrders = async (req, res) => {
@@ -14,7 +15,7 @@ exports.getAllOrders = async (req, res) => {
                 { trackingNumber: { $regex: search, $options: 'i' } }
             ];
         }
-
+        query.orderID = { $exists: true, $ne: null };
         // Filter by status
         if (status) {
             query.status = status;
@@ -45,9 +46,16 @@ exports.getAllOrders = async (req, res) => {
 // Get details of a specific order
 exports.getAdminOrderDetails = async (req, res) => {
     try {
-        const order = await Order.findOne({ orderID: req.params.orderId })
+        console.log('Looking for orderID:', req.params.orderId);
+        
+        const order = await Order.findOne({ orderID: new RegExp('^' + req.params.orderId + '$', 'i') })
+        
             .populate('user items.product');
-        if (!order) return res.render('error', { message: 'Order not found' });
+        if (!order) {
+            console.log('Order not found for orderID:', req.params.orderId);
+           
+            return res.render('error', { message: 'Order not found' });
+        }
         res.render('admin/order-details', { order });
     } catch (error) {
         res.render('error', { message: 'Error fetching order details' });
@@ -100,29 +108,56 @@ exports.verifyReturn = async (req, res) => {
     try {
         const { orderId } = req.params;
         const { verified, adminNotes } = req.body;
-
-         const order = await Order.findOne({ orderID: orderId });
-        
-
+        const order = await Order.findOne({ orderID: orderId });
         if (!order) return res.render('error', { message: 'Order not found' });
-
-        if (order.status !== 'Returned') {
-            return res.render('error', { message: 'Order must be in Returned state' });
+        console.log('Order status:', order.status);
+        // Allow both 'returned' and 'Returned' for robustness
+        if (!order.status || order.status.toLowerCase() !== 'returned') {
+            return res.render('error', { message: `Order must be in Returned state (got: ${order.status})` });
         }
-
         order.returnVerified = verified === 'true';
         if (adminNotes) order.adminNotes = adminNotes;
-
-        if (order.returnVerified && order.paymentStatus !== 'Refunded') {
-            order.paymentStatus = 'Refunded';
-            // Placeholder for wallet refund logic (since walletSchema.js was skipped)
-            // Example: await Wallet.findOneAndUpdate({ user: order.user }, { $inc: { balance: order.finalTotal } });
-            console.log(`Refund of ₹${order.finalTotal} to be processed for user ${order.user}`);
+        if (order.returnVerified && order.paymentStatus !== 'refunded') {
+            order.paymentStatus = 'refunded';
+            // Wallet refund logic (add walletBalance to userSchema first)
+            await User.findByIdAndUpdate(order.user, { $inc: { walletBalance: order.finalTotal } });
+            // Send notification to user
+            await User.findByIdAndUpdate(order.user, {
+                $push: {
+                    notifications: {
+                        message: `Your return request for order ${order.orderID} has been approved. Refund of ₹${order.finalTotal} has been credited to your wallet.`,
+                        date: new Date(),
+                        read: false
+                    }
+                }
+            });
         }
-
+        if (!order.returnVerified) {
+            // If rejected, you may want to set a different status or leave as returned
+            order.status = 'delivered'; // Or another status as per your business logic
+        }
         await order.save();
-        res.redirect(`/admin/orders/${orderId}`);
+        res.redirect('/admin/return-requests');
     } catch (error) {
         res.render('error', { message: 'Error verifying return' });
     }
 };
+
+// Add this new controller to list all return requests
+exports.getAllReturnRequests = async (req, res) => {
+    try {
+        // Find all orders with status 'returned' and not yet verified
+        const returnOrders = await Order.find({ status: 'returned', $or: [{ returnVerified: { $exists: false } }, { returnVerified: false }] })
+            .populate('user items.product');
+        res.render('admin/return-requests', { returnOrders });
+    } catch (error) {
+        res.render('error', { message: 'Error fetching return requests' });
+    }
+};
+
+
+
+
+
+
+

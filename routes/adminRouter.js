@@ -55,6 +55,7 @@ router.get("/orderList", adminAuth, orderController.getAllOrders);
 router.get("/orders/:orderId", adminAuth, orderController.getAdminOrderDetails);
 router.post("/orders/:orderId/status", adminAuth, orderController.updateOrderStatus);
 router.post("/orders/:orderId/return", adminAuth, orderController.verifyReturn);
+router.get('/return-requests', orderController.getAllReturnRequests);
 
 module.exports = router; 
 

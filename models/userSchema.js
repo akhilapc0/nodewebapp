@@ -88,6 +88,11 @@ const userSchema = new Schema({
             type: Date,
             default: Date.now
         },
+    }],
+    notifications: [{
+        message: String,
+        date: { type: Date, default: Date.now },
+        read: { type: Boolean, default: false }
     }]
 });
 

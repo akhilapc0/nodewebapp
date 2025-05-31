@@ -1,0 +1,40 @@
+<%- include("../../views/partials/admin/header") %>
+
+<div class="container mt-5">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">Return Requests</h1>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>User</th>
+                    <th>Return Reason</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% returnOrders.forEach(order => { %>
+                    <tr>
+                        <td><%= order.orderID %></td>
+                        <td><%= order.user.name %></td>
+                        <td><%= order.returnReason %></td>
+                        <td>₹<%= order.finalTotal %></td>
+                        <td>
+                            <form action="/admin/orders/<%= order.orderID %>/return" method="POST" style="display:inline-block;">
+                                <input type="hidden" name="verified" value="true">
+                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                            </form>
+                            <form action="/admin/orders/<%= order.orderID %>/return" method="POST" style="display:inline-block;">
+                                <input type="hidden" name="verified" value="false">
+                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include("../../views/partials/admin/footer") %> 

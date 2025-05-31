@@ -9,7 +9,7 @@ exports.getUserOrders = async (req, res) => {
         console.log("hiihih")
         const userId = req.session.user // Assuming user is authenticated
         console.log('Fetching orders for user ID:', userId);
-        let orders = await Order.find({ user: userId })
+        let orders = await Order.find({ user: userId , orderID : { $exists: true, $ne: null }})
             .populate('items.product')
             .sort({ createdAt: -1 }); // Sort by order date (newest first)
 
@@ -146,15 +146,21 @@ exports.requestReturn = async (req, res) => {
         if (!order) return res.render('error', { message: 'Order not found' });
 
         // Only delivered orders can be returned
-        if (order.status !== 'Delivered') {
+        if (order.status !== 'delivered') {
             return res.render('error', { message: 'Order must be delivered to request a return' });
         }
+
+        // Mark return request as submitted
+        order.returnRequest = order.returnRequest || {};
+        order.returnRequest.requested = true;
+        order.returnRequest.reason = returnReason;
+        order.returnRequest.verified = false;
 
         if (itemIds && itemIds.length > 0) {
             // Partial return (specific items)
             for (const item of order.items) {
                 if (itemIds.includes(item._id.toString())) {
-                    item.status = 'Returned';
+                    item.status = 'returned';
                     item.returnReason = returnReason;
                     // Increment product stock
                     await Product.findByIdAndUpdate(item.product, {
@@ -163,17 +169,17 @@ exports.requestReturn = async (req, res) => {
                     });
                 }
             }
-            // If all items are returned, mark the entire order as Returned
-            if (order.items.every(item => item.status === 'Returned')) {
-                order.status = 'Returned';
+            // If all items are returned, mark the entire order as returned
+            if (order.items.every(item => item.status === 'returned')) {
+                order.status = 'returned';
                 order.returnReason = returnReason;
             }
         } else {
             // Full order return
-            order.status = 'Returned';
+            order.status = 'returned';
             order.returnReason = returnReason;
             for (const item of order.items) {
-                item.status = 'Returned';
+                item.status = 'returned';
                 item.returnReason = returnReason;
                 // Increment product stock
                 await Product.findByIdAndUpdate(item.product, {
@@ -232,5 +238,36 @@ exports.downloadInvoice = async (req, res) => {
         doc.end();
     } catch (error) {
         res.status(500).send('Error generating invoice');
+    }
+};
+
+// Show user notifications
+exports.getUserNotifications = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const User = require('../../models/userSchema');
+        // Mark all notifications as read
+        await User.updateOne({ _id: userId }, { $set: { 'notifications.$[].read': true } });
+        // Fetch the updated user
+        const updatedUser = await User.findById(userId);
+        if (!updatedUser) return res.render('error', { message: 'User not found' });
+        res.render('user/notifications', { notifications: updatedUser.notifications });
+    } catch (error) {
+        res.render('error', { message: 'Error fetching notifications' });
+    }
+};
+
+exports.getAdminOrderDetails = async (req, res) => {
+    try {
+        console.log('Looking for orderID:', req.params.orderId);
+        const order = await Order.findOne({ orderID: new RegExp('^' + req.params.orderId + '$', 'i') })
+            .populate('user items.product');
+        if (!order) {
+            console.log('Order not found for orderID:', req.params.orderId);
+            return res.render('error', { message: 'Order not found' });
+        }
+        res.render('admin/order-details', { order });
+    } catch (error) {
+        res.render('error', { message: 'Error fetching order details' });
     }
 };

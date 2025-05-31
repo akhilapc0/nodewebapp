@@ -45,7 +45,7 @@
                     <p class="text-gray-600"><strong>Return Reason:</strong> <%= order.returnReason %></p>
                 <% } %>
 
-                <% if (order.status !== 'cancelled' && order.status !== 'delivered') { %>
+                <% if (order.status !== 'cancelled' && order.status !== 'delivered' && order.status !== 'returned' && !(order.returnRequest && order.returnRequest.requested)) { %>
                     <div class="mt-4">
                          <button
                             onclick="cancelOrder('<%= order.orderID %>')"
@@ -64,7 +64,7 @@
                     </div>
                 <% } %>
 
-                 <% if (order.status === 'delivered') { %>
+                 <% if (order.status === 'delivered' && !(order.returnRequest && order.returnRequest.requested)) { %>
                     <div class="mt-4">
                          <button
                             onclick="returnOrder('<%= order.orderID %>')"
@@ -80,6 +80,10 @@
                                 Return <%= item.product.productName %>
                             </button>
                         <% }) %>
+                    </div>
+                <% } else if (order.status === 'returned' || (order.returnRequest && order.returnRequest.requested)) { %>
+                    <div class="mt-4">
+                        <span class="text-yellow-600 font-semibold">Return Request Submitted</span>
                     </div>
                 <% } %>
 
@@ -124,32 +128,7 @@
         </div>
 
         <% if (order.status === 'returned') { %>
-            <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Verify Return</h2>
-            <form action="/admin/orders/<%= order.orderID %>/return" method="POST">
-                <textarea
-                    name="adminNotes"
-                    placeholder="Admin Notes"
-                    class="p-2 border rounded w-full mb-4"
-                ><%= order.adminNotes || '' %></textarea>
-                <div class="flex gap-4">
-                    <button
-                        type="submit"
-                        name="verified"
-                        value="true"
-                        class="btn btn-success btn-sm"
-                    >
-                        Approve Return
-                    </button>
-                    <button
-                        type="submit"
-                        name="verified"
-                        value="false"
-                        class="btn btn-danger btn-sm"
-                    >
-                        Reject Return
-                    </button>
-                </div>
-            </form>
+            <!-- No Verify Return form for user side -->
         <% } %>
     </div>
 </div>
