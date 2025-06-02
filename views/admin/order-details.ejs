@@ -177,5 +177,38 @@
         }
         return true; // Allow form submission
     }
+
+    // Check for return action query parameter and display confirmation message
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnAction = urlParams.get('returnAction');
+
+    if (returnAction) {
+        let title = '';
+        let icon = '';
+
+        if (returnAction === 'approved') {
+            title = 'Return Request Approved!';
+            icon = 'success';
+        } else if (returnAction === 'rejected') {
+            title = 'Return Request Rejected!';
+            icon = 'error';
+        }
+
+        if (title) {
+            Swal.fire({
+                title: title,
+                icon: icon,
+                timer: 3000, // Optional: auto-close the alert after 3 seconds
+                timerProgressBar: true,
+                showConfirmButton: false
+            }).then(() => {
+                // Remove the query parameter from the URL without refreshing the page
+                urlParams.delete('returnAction');
+                const newUrl = window.location.origin + window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                history.replaceState(null, '', newUrl);
+            });
+        }
+    }
+
 </script>
 <%- include("../../views/partials/admin/footer") %>

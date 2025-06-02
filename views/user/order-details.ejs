@@ -14,144 +14,218 @@
             max-width: 50px;
             height: auto;
         }
-        .action-buttons .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 15px;
         }
+        .item-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.375rem;
+            color: #fff;
+        }
+        .bg-success { background-color: #10b981; }
+        .bg-danger { background-color: #ef4444; }
+        .bg-info { background-color: #3b82f6; }
+        .bg-warning { background-color: #f59e0b; }
     </style>
 </head>
 
-<div class="container mt-5">
+<div class="container mx-auto mt-5 px-4">
     <h1 class="text-3xl font-bold mb-6 text-gray-800">Order Details: <%= order.orderID %></h1>
-    <a href="/user/orders" class="inline-block mb-6 text-blue-600 hover:underline">Back to Orders</a>
-    <div class="order-details-card">
+    <a href="/user/orders" class="inline-block mb-6 text-blue-600 hover:underline">← Back to Orders</a>
+
+    <% // Order Summary Section %>
+    <div class="order-details-card mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <p class="text-gray-600"><strong>Date:</strong> <%= new Date(order.createdAt).toLocaleDateString('en-IN') %></p>
-                <p class="text-gray-600"><strong>User:</strong> <%= order.user.name %></p>
-                <p class="text-gray-600"><strong>Shipping Address:</strong> <%= order.shippingAddress.name %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %>, <%= order.shippingAddress.pincode %></p>
-                <p class="text-gray-600"><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
-                <p class="text-gray-600"><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
-                <% if (order.trackingNumber) { %>
-                    <p class="text-gray-600"><strong>Tracking Number:</strong> <%= order.trackingNumber %></p>
+                <p class="text-gray-600 mb-2"><strong>Status:</strong>
+                     <% let orderStatusClass = '';
+                        switch(order.status) {
+                           case 'delivered': orderStatusClass = 'bg-success'; break;
+                           case 'cancelled':
+                           case 'return-cancelled': orderStatusClass = 'bg-danger'; break;
+                           case 'return-pending': orderStatusClass = 'bg-info'; break;
+                           default: orderStatusClass = 'bg-warning';
+                        }
+                     %>
+                    <span class="status-badge <%= orderStatusClass %>">
+                         <%= order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('-', ' ') %>
+                    </span>
+                </p>
+                <p class="text-gray-600 mb-2"><strong>Date:</strong> <%= new Date(order.createdAt).toLocaleDateString('en-IN') %></p>
+                <p class="text-gray-600 mb-2"><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
+                <p class="text-gray-600 mb-2"><strong>Payment Status:</strong>
+                     <% let paymentStatusClass = '';
+                         switch(order.paymentStatus) {
+                             case 'paid':
+                             case 'refunded': paymentStatusClass = 'bg-success'; break;
+                             default: paymentStatusClass = 'bg-warning';
+                         }
+                     %>
+                     <span class="status-badge <%= paymentStatusClass %>">
+                        <%= order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) %>
+                     </span>
+                </p>
+                 <% if (order.trackingNumber) { %>
+                    <p class="text-gray-600 mb-2"><strong>Tracking Number:</strong> <%= order.trackingNumber %></p>
                 <% } %>
                 <% if (order.expectedDelivery) { %>
-                    <p class="text-gray-600"><strong>Expected Delivery:</strong> <%= new Date(order.expectedDelivery).toLocaleDateString('en-IN') %></p>
+                    <p class="text-gray-600 mb-2"><strong>Expected Delivery:</strong> <%= new Date(order.expectedDelivery).toLocaleDateString('en-IN') %></p>
                 <% } %>
-                <% if (order.cancellationReason) { %>
-                    <p class="text-gray-600"><strong>Cancellation Reason:</strong> <%= order.cancellationReason %></p>
+                 <% if (order.cancellationReason) { %>
+                    <p class="text-gray-600 mb-2"><strong>Cancellation Reason:</strong> <%= order.cancellationReason %></p>
                 <% } %>
-                <% if (order.returnReason) { %>
-                    <p class="text-gray-600"><strong>Return Reason:</strong> <%= order.returnReason %></p>
-                <% } %>
-
-                <% if (order.status !== 'cancelled' && order.status !== 'delivered' && order.status !== 'returned' && !(order.returnRequest && order.returnRequest.requested)) { %>
-                    <div class="mt-4">
-                         <button
-                            onclick="cancelOrder('<%= order.orderID %>')"
-                            class="btn btn-danger btn-sm"
-                        >
-                            Cancel Order
-                        </button>
-                        <% order.items.forEach(item => { %>
-                            <button
-                                onclick="cancelItem('<%= order.orderID %>', '<%= item._id %>')"
-                                class="btn btn-danger btn-sm"
-                            >
-                                Cancel <%= item.product.productName %>
-                            </button>
-                        <% }) %>
-                    </div>
+                 <% if (order.returnReason) { %>
+                    <p class="text-gray-600 mb-2"><strong>Return Reason:</strong> <%= order.returnReason %></p>
                 <% } %>
 
-                 <% if (order.status === 'delivered' && !(order.returnRequest && order.returnRequest.requested)) { %>
-                    <div class="mt-4">
-                         <button
-                            onclick="returnOrder('<%= order.orderID %>')"
-                            class="btn btn-warning btn-sm"
-                        >
-                            Return Order
-                        </button>
-                         <% order.items.forEach(item => { %>
-                            <button
-                                onclick="returnItem('<%= order.orderID %>', '<%= item._id %>')"
-                                class="btn btn-warning btn-sm"
-                            >
-                                Return <%= item.product.productName %>
-                            </button>
-                        <% }) %>
-                    </div>
-                <% } %>
-
+                <% // Display overall return request status message %>
                 <% if (order.status === 'return-pending') { %>
-                    <div class="mt-4">
-                        <span class="text-blue-600 font-semibold">Return Request: Pending Approval</span>
-                    </div>
-                <% } else if (order.status === 'returned') { %>
-                    <div class="mt-4">
-                         <span class="text-green-600 font-semibold">Return Approved. Refund has been credited to your wallet.</span>
-                         <% if (order.adminNotes) { %>
-                              <p class="text-gray-600"><strong>Admin Notes:</strong> <%= order.adminNotes %></p>
-                         <% } %>
-                    </div>
-                <% } else if (order.status === 'return-cancelled') { %>
                      <div class="mt-4">
-                         <span class="text-red-600 font-semibold">Return Rejected by Admin.</span>
-                         <% if (order.adminNotes) { %>
-                              <p class="text-gray-600"><strong>Admin Reason:</strong> <%= order.adminNotes %></p>
-                         <% } %>
+                         <span class="text-blue-600 font-semibold">Return Request: Pending Approval</span>
                      </div>
-                <% } %>
-
-                <a href="/user/orders/<%= order.orderID %>/invoice" class="btn btn-success btn-sm mt-4">Download Invoice</a>
+                 <% } else if (order.status === 'returned') { %>
+                     <div class="mt-4">
+                          <span class="text-green-600 font-semibold">Return Approved. Refund has been credited to your wallet.</span>
+                          <% if (order.adminNotes) { %>
+                               <p class="text-gray-600 text-sm mt-1"><strong>Admin Notes:</strong> <%= order.adminNotes %></p>
+                          <% } %>
+                     </div>
+                 <% } else if (order.status === 'return-cancelled') { %>
+                      <div class="mt-4">
+                          <span class="text-red-600 font-semibold">Return Rejected by Admin.</span>
+                          <% if (order.adminNotes) { %>
+                               <p class="text-gray-600 text-sm mt-1"><strong>Admin Reason:</strong> <%= order.adminNotes %></p>
+                          <% } %>
+                      </div>
+                 <% } %>
 
             </div>
             <div>
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Items</h2>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% order.items.forEach(item => { %>
-                                <tr>
-                                    <td><%= item.product.productName %></td>
-                                    <td><%= item.quantity %></td>
-                                    <td>₹<%= item.price %></td>
-                                    <td>₹<%= item.quantity * item.price %></td>
-                                    <td>
-                                        <span class="badge rounded-pill alert-<%= item.status === 'delivered' ? 'success' : item.status === 'cancelled' ? 'danger' : item.status === 'returned' ? 'info' : 'warning' %> text-dark">
-                                            <%= item.status %> 
-                                        </span>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
+                <p class="text-gray-600 mb-2"><strong>Shipping Address:</strong></p>
+                <p class="text-gray-600 mb-1"><%= order.shippingAddress.name %></p>
+                <p class="text-gray-600 mb-1"><%= order.shippingAddress.city %>, <%= order.shippingAddress.state %> - <%= order.shippingAddress.pincode %></p>
+                <p class="text-gray-600">Phone: <%= order.shippingAddress.phone %></p>
+                <% if (order.shippingAddress.altPhone) { %>
+                     <p class="text-gray-600">Alt Phone: <%= order.shippingAddress.altPhone %></p>
+                <% } %>
+
+                <div class="mt-4">
+                    <p class="text-gray-600 mb-1"><strong>Subtotal:</strong> ₹<%= order.subtotal %></p>
+                    <p class="text-gray-600 mb-1"><strong>Tax:</strong> ₹<%= order.tax %></p>
+                    <p class="text-gray-600 mb-1"><strong>Discount:</strong> ₹<%= order.discount %></p>
+                    <h3 class="text-lg font-bold text-gray-800">Final Total: ₹<%= order.finalTotal %></h3>
                 </div>
-                <p class="mt-4 text-gray-600"><strong>Subtotal:</strong> ₹<%= order.subtotal %></p>
-                <p class="text-gray-600"><strong>Tax:</strong> ₹<%= order.tax %></p>
-                <p class="text-gray-600"><strong>Discount:</strong> ₹<%= order.discount %></p>
-                <p class="text-gray-600"><strong>Final Total:</strong> ₹<%= order.finalTotal %></p>
+
+                <a href="/user/orders/<%= order.orderID %>/invoice" class="btn btn-success btn-sm mt-4 inline-block">Download Invoice</a>
+
             </div>
         </div>
-
-        <% if (order.status === 'returned') { %>
-            <!-- No Verify Return form for user side -->
-        <% } %>
     </div>
+
+    <% // Items Section %>
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Items</h2>
+    <div class="grid grid-cols-1 gap-4">
+        <% order.items.forEach(item => { %>
+            <div class="order-details-card p-4 flex flex-col md:flex-row items-start md:items-center justify-between">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <img src="/uploads/re-image/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>" class="item-image">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1"><%= item.product.productName %></h3>
+                        <p class="text-gray-600 mb-1">Qty: <%= item.quantity %></p>
+                        <p class="text-gray-600 mb-1">Price: ₹<%= item.price %></p>
+                        <% console.log('Item ID:', item._id, 'Item Name:', item.product.productName, 'Status:', item.status); %>
+                        <p class="text-gray-600">Status:
+                            <% let itemStatusClass = '';
+                               switch(item.status) {
+                                  case 'delivered':
+                                  case 'return accepted': itemStatusClass = 'bg-success'; break;
+                                  case 'cancelled':
+                                  case 'return rejected': itemStatusClass = 'bg-danger'; break;
+                                  case 'return requested': itemStatusClass = 'bg-info'; break;
+                                  default: itemStatusClass = 'bg-warning';
+                               }
+                            %>
+                            <span class="status-badge <%= itemStatusClass %>">
+                                <%= item.status.charAt(0).toUpperCase() + item.status.slice(1).replace(' ', '-') %>
+                            </span>
+                        </p>
+                         <% if (item.status === 'cancelled' && item.cancellationReason) { %>
+                            <div class="text-xs text-red-500 mt-1">Reason: <%= item.cancellationReason %></div>
+                        <% } %>
+                         <% if ((item.status === 'returned' || item.status === 'return accepted') && order.adminNotes) { %>
+                             <div class="text-xs text-green-500 mt-1">Admin Notes: <%= order.adminNotes %></div>
+                         <% } %>
+                         <% if (item.status === 'return rejected' && order.adminNotes) { %>
+                              <div class="text-xs text-red-500 mt-1">Admin Reason: <%= order.adminNotes %></div>
+                         <% } %>
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <% // Item-specific Return Button or Status Message %>
+                    <% // Show return button only if item is delivered and not cancelled or in a return state %>
+                    <% if (item.status === 'delivered' && item.status !== 'cancelled' && item.status !== 'return requested' && item.status !== 'returned' && item.status !== 'return accepted' && item.status !== 'return rejected') { %>
+                         <button
+                            onclick="returnItem('<%= order.orderID %>', '<%= item._id %>')"
+                            class="btn btn-warning btn-sm"
+                        >
+                            Return Item
+                        </button>
+                    <% } else if (item.status === 'return requested') { %>
+                         <span class="text-blue-600 text-sm font-semibold">Return requested</span>
+                    <% } else if (item.status === 'returned' || item.status === 'return accepted') { %>
+                         <span class="text-green-600 text-sm font-semibold">Return Approved</span>
+                         <% if (order.adminNotes) { %>
+                              <span class="text-gray-600 text-xs mt-1">Notes: <%= order.adminNotes %></span>
+                         <% } %>
+                    <% } else if (item.status === 'return rejected') { %>
+                         <span class="text-red-600 text-sm font-semibold">Return rejected</span>
+                          <% if (order.adminNotes) { %>
+                              <span class="text-gray-600 text-xs mt-1">Reason: <%= order.adminNotes %></span>
+                         <% } %>
+                    <% } %>
+
+                    <% // Item-specific Cancel Button or Message %>
+                    <% // Show cancel button if item is in a state where cancellation is possible %>
+                    <% if (item.status !== 'cancelled' && item.status !== 'delivered' && item.status !== 'return requested' && item.status !== 'returned' && item.status !== 'return accepted' && item.status !== 'return rejected' && item.status !== 'refunded') { %>
+                        <button
+                            onclick="cancelItem('<%= order.orderID %>', '<%= item._id %>')"
+                            class="btn btn-danger btn-sm"
+                        >
+                            Cancel Item
+                        </button>
+                    <% } else if (item.status === 'cancelled') { %>
+                        <span class="text-red-600 text-sm font-semibold">❗ This item has already been cancelled.</span>
+                    <% } %>
+
+                </div>
+            </div>
+        <% }) %>
+    </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
+// Function for canceling order (keeping for full order cancel route if it exists elsewhere)
 function cancelOrder(orderId) {
     Swal.fire({
         title: 'Cancel Order',

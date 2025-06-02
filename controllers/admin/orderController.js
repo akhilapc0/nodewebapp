@@ -100,6 +100,17 @@ exports.updateOrderStatus = async (req, res) => {
         
         console.log(`Order status set to: ${order.status}`);
 
+        // If the new status is 'delivered', update the status of each item that is not already cancelled or in a return state
+        if (newStatus === 'delivered') {
+            for (const item of order.items) {
+                // Only update item status to delivered if it's not already cancelled or in a return flow
+                if (item.status !== 'cancelled' && item.status !== 'return requested' && item.status !== 'returned' && item.status !== 'return accepted' && item.status !== 'return rejected') {
+                    item.status = 'delivered';
+                }
+            }
+             console.log('Item statuses updated to delivered where applicable.');
+        }
+
         await order.save();
         console.log('Order saved successfully.');
         res.redirect(`/admin/orders/${orderId}`);
@@ -127,13 +138,20 @@ exports.verifyReturn = async (req, res) => {
 
         if (order.status === 'returned') { // If approved
             order.paymentStatus = 'refunded';
+
+            // Update item statuses to 'returned' for approved items
+            for (const item of order.items) {
+                if (item.status === 'return requested') {
+                    item.status = 'returned'; // Update item status to 'returned'
+                }
+            }
+
             // Wallet refund logic
             const user = await User.findByIdAndUpdate(order.user, { $inc: { walletBalance: order.finalTotal } }, { new: true });
 
-            // Increment product stock for all items in the order
+            // Increment product stock for all items that were part of the return request (which we just set to 'returned')
             for (const item of order.items) {
-                 // Only increment stock for items that were part of the return request
-                if(item.status === 'return requested' ) {
+                 if(item.status === 'returned' ) { // Check for the new status 'returned'
                     await Product.findByIdAndUpdate(item.product._id, { // Use item.product._id
                         $inc: { stock: item.quantity },
                         stockLastUpdated: Date.now()
@@ -157,12 +175,12 @@ exports.verifyReturn = async (req, res) => {
              if (!adminNotes) {
                   return res.render('error', { message: 'Admin notes are mandatory for rejecting a return request.' });
              }
-             // Optionally update item statuses if needed, e.g., back to 'delivered'
-             // for (const item of order.items) {
-             //      if (item.status === 'return requested') {
-             //           item.status = 'delivered';
-             //      }
-             // }
+             // Update item statuses from 'return requested' to 'return cancelled'
+             for (const item of order.items) {
+                  if (item.status === 'return requested') {
+                       item.status = 'return cancelled';
+                  }
+             }
               // Send rejection notification to user
              await User.findByIdAndUpdate(order.user, {
                  $push: {
@@ -175,8 +193,25 @@ exports.verifyReturn = async (req, res) => {
              });
         }
 
+        // --- New Logic to update overall order status based on item statuses ---
+        const allItemsReturned = order.items.every(item => item.status === 'returned');
+        const allItemsCancelled = order.items.every(item => item.status === 'cancelled');
+
+        if (allItemsReturned) {
+            order.status = 'returned';
+        } else if (allItemsCancelled) {
+             order.status = 'cancelled';
+        }
+
         await order.save();
-        res.redirect('/admin/return-requests'); // Redirect to the return requests listing page
+        
+        // Redirect back to order details with a success indicator
+        if (order.status === 'returned') {
+            res.redirect(`/admin/orders/${orderId}?returnAction=approved`);
+        } else if (order.status === 'return-cancelled') {
+            res.redirect(`/admin/orders/${orderId}?returnAction=rejected`);
+        }
+        
     } catch (error) {
         console.error("Error verifying return:", error);
         res.render('error', { message: 'Error verifying return' });
