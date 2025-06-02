@@ -95,9 +95,9 @@ exports.cancelOrder = async (req, res) => {
         } else {
             // Full order cancellation
             // Only cancel if the overall order status is not already 'cancelled'
-             if (order.status !== 'cancelled') {
-                order.status = 'cancelled';
-                order.cancellationReason = cancellationReason || 'Not specified';
+            if (!(itemIds && itemIds.length > 0) && order.status !== 'cancelled') {
+                 order.status = 'cancelled';
+                 order.cancellationReason = cancellationReason || 'Not specified';
                  for (const item of order.items) {
                     if(item.status !== 'cancelled'){
                        item.status = 'cancelled';
@@ -110,7 +110,7 @@ exports.cancelOrder = async (req, res) => {
                         }
                     }
                 }
-             }
+            }
         }
 
         // Save the order changes
@@ -158,36 +158,27 @@ exports.requestReturn = async (req, res) => {
 
         if (itemIds && itemIds.length > 0) {
             // Partial return (specific items)
+            order.status = 'return-pending'; // Set overall status to return-pending
             for (const item of order.items) {
                 if (itemIds.includes(item._id.toString())) {
-                    item.status = 'returned';
+                    item.status = 'return requested'; // Keep item status as 'return requested'
                     item.returnReason = returnReason;
-                    // Increment product stock
-                    await Product.findByIdAndUpdate(item.product, {
-                        $inc: { stock: item.quantity },
-                        stockLastUpdated: Date.now()
-                    });
+                    // Note: Stock is incremented on admin approval/rejection in the new flow
                 }
-            }
-            // If all items are returned, mark the entire order as returned
-            if (order.items.every(item => item.status === 'returned')) {
-                order.status = 'returned';
-                order.returnReason = returnReason;
             }
         } else {
             // Full order return
-            order.status = 'returned';
-            order.returnReason = returnReason;
+            order.status = 'return-pending'; // Set overall status to return-pending
             for (const item of order.items) {
-                item.status = 'returned';
+                item.status = 'return requested'; // Keep item status as 'return requested'
                 item.returnReason = returnReason;
-                // Increment product stock
-                await Product.findByIdAndUpdate(item.product, {
-                    $inc: { stock: item.quantity },
-                    stockLastUpdated: Date.now()
-                });
+                 // Note: Stock is incremented on admin approval/rejection in the new flow
             }
         }
+
+        // Clear previous return verification status
+        order.returnRequest.verified = undefined;
+        order.adminNotes = undefined;
 
         await order.save();
         res.redirect('/user/orders');

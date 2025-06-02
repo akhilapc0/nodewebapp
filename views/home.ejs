@@ -50,6 +50,11 @@
     <div class="container">
         <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif;">New Arrivals</h2>
         <div class="row g-4">
+            <% if (products.length === 0) { %>
+                <div class="col-12 text-center">
+                    <p>No new arrivals at the moment. Please check back later!</p>
+                </div>
+            <% } %>
             <% products.forEach(product => { %>
                 <div class="col-md-3">
                     <div class="product-card" style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.1); transition: transform 0.3s ease;">

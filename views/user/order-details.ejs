@@ -81,10 +81,26 @@
                             </button>
                         <% }) %>
                     </div>
-                <% } else if (order.status === 'returned' || (order.returnRequest && order.returnRequest.requested)) { %>
+                <% } %>
+
+                <% if (order.status === 'return-pending') { %>
                     <div class="mt-4">
-                        <span class="text-yellow-600 font-semibold">Return Request Submitted</span>
+                        <span class="text-blue-600 font-semibold">Return Request: Pending Approval</span>
                     </div>
+                <% } else if (order.status === 'returned') { %>
+                    <div class="mt-4">
+                         <span class="text-green-600 font-semibold">Return Approved. Refund has been credited to your wallet.</span>
+                         <% if (order.adminNotes) { %>
+                              <p class="text-gray-600"><strong>Admin Notes:</strong> <%= order.adminNotes %></p>
+                         <% } %>
+                    </div>
+                <% } else if (order.status === 'return-cancelled') { %>
+                     <div class="mt-4">
+                         <span class="text-red-600 font-semibold">Return Rejected by Admin.</span>
+                         <% if (order.adminNotes) { %>
+                              <p class="text-gray-600"><strong>Admin Reason:</strong> <%= order.adminNotes %></p>
+                         <% } %>
+                     </div>
                 <% } %>
 
                 <a href="/user/orders/<%= order.orderID %>/invoice" class="btn btn-success btn-sm mt-4">Download Invoice</a>

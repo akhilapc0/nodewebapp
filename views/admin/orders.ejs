@@ -41,7 +41,7 @@
                 <option value="Out for Delivery" <%= status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
                 <option value="Delivered" <%= status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
                 <option value="Cancelled" <%= status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                <option value="Returned" <%= status === 'Returned' ? 'selected' : '' %>>Returned</option>
+                <option value="returned" <%= status === 'returned' ? 'selected' : '' %>>Return requested</option>
             </select>
             <select name="sortBy" class="p-2 border rounded">
                 <option value="createdAt" <%= sortBy === 'createdAt' ? 'selected' : '' %>>Order Date</option>

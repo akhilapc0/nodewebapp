@@ -93,7 +93,11 @@ const userSchema = new Schema({
         message: String,
         date: { type: Date, default: Date.now },
         read: { type: Boolean, default: false }
-    }]
+    }],
+    walletBalance: {
+        type: Number,
+        default: 0
+    }
 });
 
 const User = mongoose.model('User', userSchema);

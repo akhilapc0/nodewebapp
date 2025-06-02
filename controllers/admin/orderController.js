@@ -1,5 +1,6 @@
 const Order = require('../../models/orderSchema');
 const User = require('../../models/userSchema');
+const Product = require('../../models/productSchema');
 
 // Get all orders with pagination, search, sort, and filter
 exports.getAllOrders = async (req, res) => {
@@ -90,6 +91,11 @@ exports.updateOrderStatus = async (req, res) => {
             return res.redirect(`/admin/orders/${orderId}`);
         }
 
+        if(order.status=== "cancelled"){
+             console.log(`Status is already cancelled. No change needed.`);
+            return res.redirect(`/admin/orders/${orderId}`);
+        }
+
         order.status = newStatus;
         
         console.log(`Order status set to: ${order.status}`);
@@ -107,20 +113,34 @@ exports.updateOrderStatus = async (req, res) => {
 exports.verifyReturn = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { verified, adminNotes } = req.body;
-        const order = await Order.findOne({ orderID: orderId });
+        const { status, adminNotes } = req.body; // Receive status from button value
+        const order = await Order.findOne({ orderID: orderId }).populate('items.product');
         if (!order) return res.render('error', { message: 'Order not found' });
-        console.log('Order status:', order.status);
-        // Allow both 'returned' and 'Returned' for robustness
-        if (!order.status || order.status.toLowerCase() !== 'returned') {
-            return res.render('error', { message: `Order must be in Returned state (got: ${order.status})` });
+
+        // Only process if the current status is 'return-pending'
+        if (order.status !== 'return-pending') {
+            return res.render('error', { message: `Cannot verify return for order in ${order.status} state.` });
         }
-        order.returnVerified = verified === 'true';
+
+        order.status = status; // Set the new status ('returned' or 'return-cancelled')
         if (adminNotes) order.adminNotes = adminNotes;
-        if (order.returnVerified && order.paymentStatus !== 'refunded') {
+
+        if (order.status === 'returned') { // If approved
             order.paymentStatus = 'refunded';
-            // Wallet refund logic (add walletBalance to userSchema first)
-            await User.findByIdAndUpdate(order.user, { $inc: { walletBalance: order.finalTotal } });
+            // Wallet refund logic
+            const user = await User.findByIdAndUpdate(order.user, { $inc: { walletBalance: order.finalTotal } }, { new: true });
+
+            // Increment product stock for all items in the order
+            for (const item of order.items) {
+                 // Only increment stock for items that were part of the return request
+                if(item.status === 'return requested' ) {
+                    await Product.findByIdAndUpdate(item.product._id, { // Use item.product._id
+                        $inc: { stock: item.quantity },
+                        stockLastUpdated: Date.now()
+                    });
+                }
+            }
+
             // Send notification to user
             await User.findByIdAndUpdate(order.user, {
                 $push: {
@@ -131,14 +151,34 @@ exports.verifyReturn = async (req, res) => {
                     }
                 }
             });
+
+        } else if (order.status === 'return-cancelled') { // If rejected
+             // Ensure adminNotes is mandatory for rejection (handled by frontend validation, but good to have backend check)
+             if (!adminNotes) {
+                  return res.render('error', { message: 'Admin notes are mandatory for rejecting a return request.' });
+             }
+             // Optionally update item statuses if needed, e.g., back to 'delivered'
+             // for (const item of order.items) {
+             //      if (item.status === 'return requested') {
+             //           item.status = 'delivered';
+             //      }
+             // }
+              // Send rejection notification to user
+             await User.findByIdAndUpdate(order.user, {
+                 $push: {
+                     notifications: {
+                         message: `Your return request for order ${order.orderID} has been rejected by the admin. Reason: ${adminNotes}`,
+                         date: new Date(),
+                         read: false
+                     }
+                 }
+             });
         }
-        if (!order.returnVerified) {
-            // If rejected, you may want to set a different status or leave as returned
-            order.status = 'delivered'; // Or another status as per your business logic
-        }
+
         await order.save();
-        res.redirect('/admin/return-requests');
+        res.redirect('/admin/return-requests'); // Redirect to the return requests listing page
     } catch (error) {
+        console.error("Error verifying return:", error);
         res.render('error', { message: 'Error verifying return' });
     }
 };
@@ -146,11 +186,12 @@ exports.verifyReturn = async (req, res) => {
 // Add this new controller to list all return requests
 exports.getAllReturnRequests = async (req, res) => {
     try {
-        // Find all orders with status 'returned' and not yet verified
-        const returnOrders = await Order.find({ status: 'returned', $or: [{ returnVerified: { $exists: false } }, { returnVerified: false }] })
+        // Find all orders with status 'return-pending'
+        const returnOrders = await Order.find({ status: 'return-pending' })
             .populate('user items.product');
         res.render('admin/return-requests', { returnOrders });
     } catch (error) {
+        console.error("Error fetching return requests:", error);
         res.render('error', { message: 'Error fetching return requests' });
     }
 };

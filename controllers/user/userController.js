@@ -50,33 +50,7 @@ const loadHomePage = async (req, res) => {
 
         let productData = await Product.find()
             .populate('category')
-            .then(products => {
-                return products.filter(product => {
-                    const isValid = !product.isBlocked && 
-                                  product.quantity > 0 && 
-                                  categoryIds.some(id => id.toString() === product.category._id.toString());
-                    console.log(`Filtering ${product.productName}:`, {
-                        isBlocked: product.isBlocked,
-                        quantity: product.quantity,
-                        categoryId: product.category._id,
-                        isValid: isValid
-                    });
-                    return isValid;
-                });
-            });
-
-        console.log("Filtered products:", productData.length);
-        console.log("Products details with categories:", productData.map(p => ({
-            name: p.productName,
-            category: p.category,
-            categoryId: p.category._id,
-            isBlocked: p.isBlocked,
-            quantity: p.quantity,
-            createdOn: p.createdOn
-        })));
-
-        
-        productData.sort((a, b) => new Date(b.createdOn) - new Date(a.createdOn));
+            .populate('brand');
         const newArrivals = productData.slice(0, 4);
         
         console.log("New arrivals:", newArrivals.length);
@@ -85,6 +59,7 @@ const loadHomePage = async (req, res) => {
             createdOn: p.createdOn
         })));
 
+        console.log("Products sent to home view:", newArrivals);
         if (user) {
             const userData = await User.findOne({ _id: user });
             return res.render("home", {

@@ -20,7 +20,7 @@ const orderItemSchema = new mongoose.Schema({
   },
   status: {  // Individual item status
     type: String,
-    enum: ['ordered', 'cancelled', 'returned', 'delivered'],
+    enum: ['ordered', 'cancelled', 'return requested', 'delivered','returned','return rejected','return accepted'],
     default: 'ordered'
   },
   cancelReason: {
@@ -82,7 +82,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'shipped', 'out for delivery', 'delivered', 'cancelled', 'returned'],
+    enum: ['pending', 'shipped', 'out for delivery', 'delivered', 'cancelled', 'returned', 'return-pending', 'return-cancelled'],
     default: 'pending'
   },
   cancelReason: {

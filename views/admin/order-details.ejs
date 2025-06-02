@@ -62,7 +62,7 @@
                                     <td>₹<%= item.price %></td>
                                     <td>₹<%= item.quantity * item.price %></td>
                                     <td>
-                                        <span class="badge rounded-pill alert-<%= item.status === 'delivered' ? 'success' : item.status === 'cancelled' ? 'danger' : item.status === 'returned' ? 'info' : 'warning' %>">
+                                        <span class="badge rounded-pill alert-<%= item.status === 'delivered' ? 'success' : item.status === 'cancelled' ? 'danger' : item.status === 'return requested' ? 'info' : 'warning' %>">
                                             <%= item.status === 'cancelled' ? 'Cancelled' : item.status %>
                                         </span>
                                         <% if (item.status === 'cancelled' && item.cancellationReason) { %>
@@ -89,7 +89,7 @@
                 <option value="out for delivery" <%= order.status === 'out for delivery' ? 'selected' : '' %>>Out for Delivery</option>
                 <option value="delivered" <%= order.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
                 <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
-                <option value="returned" <%= order.status === 'returned' ? 'selected' : '' %>>Returned</option>
+                <option value="returned" <%= order.status === 'returned' ? 'selected' : '' %>>Return requested</option>
             </select>
             <!-- <input
                 type="text"
@@ -107,28 +107,34 @@
             <button type="submit" class="btn btn-primary btn-sm">Update</button>
         </form>
 
-        <% if (order.status === 'returned') { %>
-            <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Verify Return</h2>
+        <% if (order.status === 'return-pending') { %>
+            <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Verify Return Request</h2>
             <form action="/admin/orders/<%= order.orderID %>/return" method="POST">
-                <textarea
-                    name="adminNotes"
-                    placeholder="Admin Notes"
-                    class="p-2 border rounded w-full mb-4"
-                ><%= order.adminNotes || '' %></textarea>
+                <div class="mb-4">
+                    <label for="adminNotes" class="block text-gray-700 font-bold mb-2">Admin Notes (Optional for Approval, Mandatory for Rejection):</label>
+                    <textarea
+                        id="adminNotes"
+                        name="adminNotes"
+                        placeholder="Enter reason for approval or rejection..."
+                        class="p-2 border rounded w-full"
+                        rows="3"
+                    ><%= order.adminNotes || '' %></textarea>
+                </div>
                 <div class="flex gap-4">
                     <button
                         type="submit"
-                        name="verified"
-                        value="true"
+                        name="status"
+                        value="returned"
                         class="btn btn-success btn-sm"
                     >
                         Approve Return
                     </button>
                     <button
                         type="submit"
-                        name="verified"
-                        value="false"
+                        name="status"
+                        value="return-cancelled"
                         class="btn btn-danger btn-sm"
+                        onclick="return validateRejectionReason()"
                     >
                         Reject Return
                     </button>
@@ -140,4 +146,36 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+    const statusSelect = document.querySelector('select[name="status"]');
+    const currentStatus = "<%= order.status %>";
+
+    // Clear existing options
+    statusSelect.innerHTML = '';
+
+    // Define the exact main status options for the dropdown
+    const mainStatusOptions = ["pending", "shipped", "delivered", "cancelled"];
+
+    // Populate the dropdown with main status options
+    mainStatusOptions.forEach(optionValue => {
+        const option = document.createElement('option');
+        option.value = optionValue;
+        option.textContent = optionValue.charAt(0).toUpperCase() + optionValue.slice(1).replace('-', ' '); // Capitalize first letter and replace hyphen
+        // Select the current status if it's one of the main statuses
+        if (optionValue === currentStatus) {
+            option.selected = true;
+        }
+        statusSelect.appendChild(option);
+    });
+
+    // Function to validate admin notes on rejection
+    function validateRejectionReason() {
+        const adminNotes = document.getElementById('adminNotes').value.trim();
+        if (adminNotes === '') {
+            Swal.fire('Reason Required', 'Please provide a reason for rejecting the return request.', 'warning');
+            return false; // Prevent form submission
+        }
+        return true; // Allow form submission
+    }
+</script>
 <%- include("../../views/partials/admin/footer") %>
