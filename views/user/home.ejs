@@ -68,7 +68,7 @@
     <!-- Header Section End -->
          
 
-    <%- include("../../views/partials/user/header",{user:locals.user})%>
+    <%- include("../../views/partials/user/header",{user:locals.user, cartCount: typeof cartCount !== 'undefined' ? cartCount : 0})%>
                 
 
 

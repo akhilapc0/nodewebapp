@@ -22,37 +22,42 @@
 </div>
 
 <header class="card-header text-center mb-20">
-    <form action="/admin/orders" method="GET" class="d-inline">
-        <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin-left: 230px;">
+    <form id="orderSearchForm" action="/admin/orderList" method="GET" class="d-inline">
+        <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin-left: 230px; position: relative;">
             <input
                 type="text"
                 name="search"
-                placeholder="Search by Order ID, User, or Tracking..."
+                id="orderSearchInput"
+                placeholder="Search by Order ID, User, or Date..."
                 value="<%= search || '' %>"
-                class="form-control border-0 rounded-pill"
+                class="form-control border-0 rounded-pill pr-8"
+                style="padding-right: 2.5rem;"
+                autocomplete="off"
             >
+            <span id="clearOrderSearch" title="Clear search" style="display:none; position: absolute; right: 40px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem; color: #888; z-index: 10; background: #fff; border-radius: 50%; padding: 0 6px; box-shadow: 0 0 2px #ccc;">&times;</span>
             <button class="btn border-0" type="submit">Search</button>
         </div>
         <div class="mt-3 flex justify-center gap-3">
-            <select name="status" class="p-2 border rounded">
+            <select name="status" class="p-2 border rounded filter-trigger">
                 <option value="">All Statuses</option>
-                <option value="Pending" <%= status === 'Pending' ? 'selected' : '' %>>Pending</option>
-                <option value="Shipped" <%= status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                <option value="Out for Delivery" <%= status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
-                <option value="Delivered" <%= status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                <option value="Cancelled" <%= status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                <option value="returned" <%= status === 'returned' ? 'selected' : '' %>>Return requested</option>
+                <option value="pending" <%= status === 'pending' ? 'selected' : '' %>>Pending</option>
+                <option value="shipped" <%= status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="out for delivery" <%= status === 'out for delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                <option value="delivered" <%= status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+                <option value="cancelled" <%= status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                <option value="return-pending" <%= status === 'return-pending' ? 'selected' : '' %>>Return requested</option>
+                <option value="returned" <%= status === 'returned' ? 'selected' : '' %>>Returned</option>
             </select>
-            <select name="sortBy" class="p-2 border rounded">
+            <select name="sortBy" class="p-2 border rounded filter-trigger">
                 <option value="createdAt" <%= sortBy === 'createdAt' ? 'selected' : '' %>>Order Date</option>
                 <option value="finalTotal" <%= sortBy === 'finalTotal' ? 'selected' : '' %>>Total</option>
             </select>
-            <select name="sortOrder" class="p-2 border rounded">
+            <select name="sortOrder" class="p-2 border rounded filter-trigger">
                 <option value="desc" <%= sortOrder === 'desc' ? 'selected' : '' %>>Descending</option>
                 <option value="asc" <%= sortOrder === 'asc' ? 'selected' : '' %>>Ascending</option>
             </select>
             <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
-            <a href="/admin/orders" class="btn btn-secondary btn-sm">Clear Filters</a>
+            <a href="/admin/orderList" class="btn btn-secondary btn-sm">Clear Filters</a>
         </div>
     </form>
 </header>
@@ -63,25 +68,31 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Order ID</th>
-                        <th>Date</th>
-                        <th>User</th>
-                        <th>Total</th>
+                        <th><a href="?sortBy=orderID&sortOrder=<%= sortBy === 'orderID' && sortOrder === 'asc' ? 'desc' : 'asc' %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= status ? '&status=' + encodeURIComponent(status) : '' %><%= page ? '&page=' + page : '' %>&limit=<%= limit %>">Order ID</a></th>
+                        <th><a href="?sortBy=createdAt&sortOrder=<%= sortBy === 'createdAt' && sortOrder === 'asc' ? 'desc' : 'asc' %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= status ? '&status=' + encodeURIComponent(status) : '' %><%= page ? '&page=' + page : '' %>&limit=<%= limit %>">Date</a></th>
+                        <th><a href="?sortBy=user.name&sortOrder=<%= sortBy === 'user.name' && sortOrder === 'asc' ? 'desc' : 'asc' %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= status ? '&status=' + encodeURIComponent(status) : '' %><%= page ? '&page=' + page : '' %>&limit=<%= limit %>">User</a></th>
+                        <th><a href="?sortBy=finalTotal&sortOrder=<%= sortBy === 'finalTotal' && sortOrder === 'asc' ? 'desc' : 'asc' %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= status ? '&status=' + encodeURIComponent(status) : '' %><%= page ? '&page=' + page : '' %>&limit=<%= limit %>">Total</a></th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <% orders.forEach(order => { %>
-                        <tr>
+                        <tr class="<%= order.status === 'return-pending' ? 'bg-yellow-100' : order.status === 'returned' ? 'bg-green-100' : '' %>">
                             <td><%= order.orderID %></td>
                             <td><%= new Date(order.createdAt).toLocaleDateString('en-IN') %></td>
                             <td><%= order.user.name %></td>
                             <td>₹<%= order.finalTotal %></td>
                             <td>
-                                <span class="badge rounded-pill alert-<%= order.status === 'Delivered' ? 'success' : order.status === 'Cancelled' ? 'danger' : 'warning' %>">
+                                <% if (order.status === 'return-pending') { %>
+                                  <span class="badge rounded-pill bg-warning text-dark">Return Requested</span>
+                                <% } else if (order.status === 'returned') { %>
+                                  <span class="badge rounded-pill bg-success text-white">Returned</span>
+                                <% } else { %>
+                                  <span class="badge rounded-pill alert-<%= order.status === 'Delivered' ? 'success' : order.status === 'Cancelled' ? 'danger' : 'warning' %>">
                                     <%= order.status === 'Cancelled' ? 'Cancelled' : order.status %>
-                                </span>
+                                  </span>
+                                <% } %>
                             </td>
                             <td>
                                 <div class="action-buttons">
@@ -99,15 +110,41 @@
 <div class="container mt-3">
     <nav aria-label="Page navigation">
         <ul class="pagination justify-content-center mb-20">
+            <li class="page-item <%= page === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= page - 1 %>&search=<%= search || '' %>&status=<%= status || '' %>&sortBy=<%= sortBy %>&sortOrder=<%= sortOrder %>" tabindex="-1">Previous</a>
+            </li>
             <% for (let i = 1; i <= Math.ceil(total / limit); i++) { %>
                 <li class="page-item <%= (i === page) ? 'active' : '' %>">
                     <a class="page-link" href="?page=<%= i %>&search=<%= search || '' %>&status=<%= status || '' %>&sortBy=<%= sortBy %>&sortOrder=<%= sortOrder %>"><%= i %></a>
                 </li>
             <% } %>
+            <li class="page-item <%= page === Math.ceil(total / limit) ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= page + 1 %>&search=<%= search || '' %>&status=<%= status || '' %>&sortBy=<%= sortBy %>&sortOrder=<%= sortOrder %>">Next</a>
+            </li>
         </ul>
     </nav>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+$(function() {
+  function toggleClearIcon() {
+    if ($('#orderSearchInput').val()) {
+      $('#clearOrderSearch').show();
+    } else {
+      $('#clearOrderSearch').hide();
+    }
+  }
+  toggleClearIcon();
+  $('#orderSearchInput').on('input', toggleClearIcon);
+  $('#clearOrderSearch').on('click', function() {
+    $('#orderSearchInput').val('');
+    $('#orderSearchForm').submit();
+  });
+  $('.filter-trigger').on('change', function() {
+    $('#orderSearchForm').submit();
+  });
+});
+</script>
 <%- include("../../views/partials/admin/footer") %>

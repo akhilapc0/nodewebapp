@@ -13,8 +13,9 @@ const addToCart = async (req, res) => {
 
     // Check if product exists and is available
     const product = await Product.findById(productId).populate('category');
-    if (!product || product.isBlocked || !product.category.isListed || product.quantity <= 0) {
-      return res.status(400).json({ error: 'Product not available' });
+    const stock = parseInt(product.stock);
+    if (!product || product.isBlocked || !product.category.isListed || isNaN(stock) || stock <= 0) {
+      return res.status(400).json({ success: false, message: 'Product not available' });
     }
 
     // Find or create cart
@@ -25,14 +26,16 @@ const addToCart = async (req, res) => {
 
     // Check if product is already in cart
     const itemIndex = cart.items.findIndex(item => item.product.equals(productId));
-    const maxQty = Math.min(product.quantity, 5); // Maximum 5 items or available stock
+    const maxQty = Math.min(stock, 5);
 
     if (itemIndex > -1) {
       // Product exists in cart, increment quantity if possible
       if (cart.items[itemIndex].quantity < maxQty) {
         cart.items[itemIndex].quantity += 1;
+        await cart.save();
+        return res.status(200).json({ success: true, message: 'Product quantity increased in cart' });
       } else {
-        return res.status(400).json({ error: 'Maximum quantity reached' });
+        return res.status(400).json({ success: false, message: 'Maximum quantity reached for this product' });
       }
     } else {
       // Add new product to cart
@@ -41,16 +44,14 @@ const addToCart = async (req, res) => {
         quantity: 1,
         price: product.salesPrice // Added price field
       });
+      await cart.save();
+      // Remove from wishlist if exists
+      await Wishlist.updateOne({ user: userId }, { $pull: { products: productId } });
+      return res.status(200).json({ success: true, message: 'Product added to cart' });
     }
-
-    // Remove from wishlist if exists
-    await Wishlist.updateOne({ user: userId }, { $pull: { products: productId } });
-
-    await cart.save();
-    return res.status(200).json({ message: 'Product added to cart' });
   } catch (err) {
     console.log('Add to cart error:', err);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
 
@@ -97,6 +98,7 @@ const getCart = async (req, res) => {
     }
 
     // Prepare the view data
+    const cartCount = validItems.length;
     const viewData = {
       cart: cart ? {
         ...cart.toObject(),
@@ -108,8 +110,8 @@ const getCart = async (req, res) => {
       },
       message: validItems.length === 0 ? 'Your cart is empty' : null,
       error: null,
-      // Fetch and pass user data
-      user: await User.findById(userId)
+      user: await User.findById(userId),
+      cartCount
     };
 
     res.render('cart', viewData);
@@ -148,7 +150,8 @@ const updateQuantity = async (req, res) => {
       return res.status(404).json({ error: 'Item not found in cart' });
     }
 
-    const maxQty = Math.min(product.quantity, 5);
+    const stock = parseInt(product.stock);
+    const maxQty = isNaN(stock) ? 1 : Math.min(stock, 5);
 
     if (action === 'increment') {
       if (item.quantity < maxQty) {
@@ -399,6 +402,11 @@ const placeOrder = async (req, res) => {
     // Clear cart only if order is successfully created
     cart.items = [];
     await cart.save();
+
+    // After order is successfully created and saved, decrement product stock
+    for (const item of validItems) {
+        await Product.findByIdAndUpdate(item.product._id, { $inc: { stock: -item.quantity } });
+    }
 
     // For COD, send JSON success response with orderId
     if (paymentMethod === 'COD') {

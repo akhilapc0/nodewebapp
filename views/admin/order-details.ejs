@@ -74,37 +74,46 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="mt-4 text-gray-600"><strong>Subtotal:</strong> ₹<%= order.subtotal %></p>
-                <p class="text-gray-600"><strong>Tax:</strong> ₹<%= order.tax %></p>
-                <p class="text-gray-600"><strong>Discount:</strong> ₹<%= order.discount %></p>
-                <p class="text-gray-600"><strong>Final Total:</strong> ₹<%= order.finalTotal %></p>
+                <p class="mt-4 text-gray-600"><strong>Subtotal:</strong> ₹<%= Math.round(order.subtotal) %></p>
+                <p class="text-gray-600"><strong>Tax:</strong> ₹<%= Math.round(order.tax) %></p>
+                <p class="text-gray-600"><strong>Discount:</strong> ₹<%= Math.round(order.discount) %></p>
+                <p class="text-gray-600"><strong>Final Total:</strong> ₹<%= Math.round(order.finalTotal) %></p>
             </div>
         </div>
 
         <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Update Status</h2>
         <form action="/admin/orders/<%= order.orderID %>/status" method="POST" class="flex flex-col md:flex-row gap-4 mb-6">
-            <select name="status" class="p-2 border rounded">
-                <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pending</option>
-                <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
-                <option value="out for delivery" <%= order.status === 'out for delivery' ? 'selected' : '' %>>Out for Delivery</option>
-                <option value="delivered" <%= order.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
-                <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
-                <option value="returned" <%= order.status === 'returned' ? 'selected' : '' %>>Return requested</option>
+            <select name="status" class="p-2 border rounded" <%= (order.status === 'cancelled' || order.status === 'returned') ? 'disabled' : '' %>>
+                <% if (order.status === 'pending') { %>
+                    <option value="pending" selected>Pending</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="out for delivery">Out for Delivery</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                <% } else if (order.status === 'shipped') { %>
+                    <option value="shipped" selected>Shipped</option>
+                    <option value="out for delivery">Out for Delivery</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                <% } else if (order.status === 'out for delivery') { %>
+                    <option value="out for delivery" selected>Out for Delivery</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                <% } else if (order.status === 'delivered') { %>
+                    <option value="delivered" selected>Delivered</option>
+                    <option value="return-pending">Return requested</option>
+                    <option value="cancelled">Cancelled</option>
+                <% } else if (order.status === 'return-pending') { %>
+                    <option value="return-pending" selected>Return requested</option>
+                    <option value="returned">Returned</option>
+                    <option value="cancelled">Cancelled</option>
+                <% } else if (order.status === 'returned') { %>
+                    <option value="returned" selected>Returned</option>
+                <% } else if (order.status === 'cancelled') { %>
+                    <option value="cancelled" selected>Cancelled</option>
+                <% } %>
             </select>
-            <!-- <input
-                type="text"
-                name="trackingNumber"
-                placeholder="Tracking Number"
-                value="<%= order.trackingNumber || '' %>"
-                class="p-2 border rounded"
-            >
-            <input
-                type="date"
-                name="expectedDelivery"
-                value="<%= order.expectedDelivery ? order.expectedDelivery.toISOString().split('T')[0] : '' %>"
-                class="p-2 border rounded"
-            > -->
-            <button type="submit" class="btn btn-primary btn-sm">Update</button>
+            <button type="submit" class="btn btn-primary btn-sm" <%= (order.status === 'cancelled' || order.status === 'returned') ? 'disabled' : '' %>>Update</button>
         </form>
 
         <% if (order.status === 'return-pending') { %>
@@ -147,35 +156,14 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
-    const statusSelect = document.querySelector('select[name="status"]');
-    const currentStatus = "<%= order.status %>";
-
-    // Clear existing options
-    statusSelect.innerHTML = '';
-
-    // Define the exact main status options for the dropdown
-    const mainStatusOptions = ["pending", "shipped", "delivered", "cancelled"];
-
-    // Populate the dropdown with main status options
-    mainStatusOptions.forEach(optionValue => {
-        const option = document.createElement('option');
-        option.value = optionValue;
-        option.textContent = optionValue.charAt(0).toUpperCase() + optionValue.slice(1).replace('-', ' '); // Capitalize first letter and replace hyphen
-        // Select the current status if it's one of the main statuses
-        if (optionValue === currentStatus) {
-            option.selected = true;
-        }
-        statusSelect.appendChild(option);
-    });
-
     // Function to validate admin notes on rejection
     function validateRejectionReason() {
         const adminNotes = document.getElementById('adminNotes').value.trim();
         if (adminNotes === '') {
             Swal.fire('Reason Required', 'Please provide a reason for rejecting the return request.', 'warning');
-            return false; // Prevent form submission
+            return false;
         }
-        return true; // Allow form submission
+        return true;
     }
 
     // Check for return action query parameter and display confirmation message

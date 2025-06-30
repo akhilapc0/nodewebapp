@@ -43,7 +43,7 @@
                         <p class="text-lg font-semibold text-gray-800">Order ID: <%= order.orderID %></p>
                         <p class="text-gray-600">Date: <%= new Date(order.createdAt).toLocaleDateString('en-IN') %></p>
                         <p class="text-gray-600">Status: <span class="badge rounded-pill alert-<%= order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'danger' : order.status === 'returned' ? 'info' : 'warning' %> text-dark"><%= order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending' %></span></p>
-                        <p class="text-gray-600">Total: ₹<%= order.finalTotal %></p>
+                        <p class="text-gray-600">Total: ₹<%= Math.round(order.finalTotal) %></p>
                     </div>
                     <div class="action-buttons flex flex-wrap gap-3">
                         <% if (order.status === 'Delivered') { %>

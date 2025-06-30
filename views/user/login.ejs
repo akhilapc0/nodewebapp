@@ -113,54 +113,72 @@
         color:#0056b3;
         text-decoration: underline;
       }
+      @media (max-width: 768px) {
+        .login-section {
+          flex-direction: column;
+        }
+        .login-form, .login-image {
+          max-width: 100% !important;
+        }
+      }
     </style>
   </head>
   <body>
     <%- include("../../views/partials/user/header") %>
     <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-      <div class="card">
-                    <div class="card-header">
-                        <h3 class="text-center">Login</h3>
+      <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+          <div class="card">
+            <div class="card-body">
+              <div class="row login-section">
+                <div class="col-md-6 login-form">
+                  <h3 class="card-title text-center mb-4">Login</h3>
+                  <% if (message) { %>
+                    <div class="alert alert-danger text-center"><%= message %></div>
+                  <% } %>
+                  <form action="/user/login" method="POST" id="loginForm">
+                    <div class="form-group mb-3">
+                      <label for="email">Email address</label>
+                      <input type="email" class="form-control" id="email" name="email" required>
                     </div>
-                    <div class="card-body">
-                        <% if (message) { %>
-                            <div class="alert alert-danger text-center"><%= message %></div>
-                        <% } %>
-                        <form action="/user/login" method="POST" id="loginForm">
-                            <div class="form-group mb-3">
-                <label for="email">Email address</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
-              </div>
-                            <div class="form-group mb-3">
-                <label for="password">Password</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
-              </div>
-                            <div class="form-group text-center">
-                                <button type="submit" class="btn btn-primary">Login</button>
-              </div>
-                            <div class="text-center mt-3">
-                                <p>Don't have an account? <a href="/user/signup">Sign up</a></p>
-                                <p><a href="/user/forgot-password">Forgot Password?</a></p>
-              </div>
-                        </form>
+                    <div class="form-group mb-3">
+                      <label for="password">Password</label>
+                      <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="form-group text-center">
+                      <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </div>
+                    <div class="text-center mt-3">
+                      <p>or login with</p>
+                      <a href="/user/auth/google" class="btn btn-outline-danger w-100 mb-2">
+                        <img src="/img/googlesignup.png" alt="Google Logo" style="width: 24px; height: 24px; margin-right: 8px;" /> Google
+                      </a>
+                    </div>
+                    <div class="text-center mt-3">
+                      <p>Don't have an account? <a href="/user/signup">Sign up</a></p>
+                      <p><a href="/user/forgot-password">Forgot Password?</a></p>
+                    </div>
+                  </form>
                 </div>
+                <div class="col-md-6 login-image d-flex flex-column align-items-center justify-content-center">
+                  <img src="/img/loginpic.png" alt="Login" class="img-fluid mb-3" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+    <%- include("../../views/partials/user/footer") %>
     <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      document.getElementById('loginForm').addEventListener('submit', function(e) {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value.trim();
-
         if (!email || !password) {
-            e.preventDefault();
-            alert('Please fill in all fields');
-          }
+          e.preventDefault();
+          alert('Please fill in all fields');
+        }
       });
     </script>
-    <%- include("../../views/partials/user/footer") %>
   </body>
 </html>

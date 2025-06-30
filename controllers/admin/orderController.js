@@ -67,55 +67,54 @@ exports.getAdminOrderDetails = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { status } = req.body;
-
-        console.log(`Attempting to update order status for orderID: ${orderId}`);
-        console.log(`Received status from frontend: ${status}`);
+        let { status } = req.body;
+        status = status.toLowerCase();
 
         const order = await Order.findOne({ orderID: orderId });
-       
         if (!order) {
-            console.log(`Order not found for orderID: ${orderId}`);
             return res.render('error', { message: 'Order not found' });
         }
 
-        console.log(`Found order. Current status: ${order.status}`);
-
-        // Convert status to lowercase before saving
-        const newStatus = status.toLowerCase();
-        console.log(`Converted status to lowercase: ${newStatus}`);
-
-        // Check if the status is actually changing to prevent unnecessary saves
-        if (order.status === newStatus) {
-            console.log(`Status is already ${newStatus}. No change needed.`);
+        // Prevent invalid transitions from cancelled/returned
+        if (order.status === 'cancelled' || order.status === 'returned') {
             return res.redirect(`/admin/orders/${orderId}`);
         }
 
-        if(order.status=== "cancelled"){
-             console.log(`Status is already cancelled. No change needed.`);
-            return res.redirect(`/admin/orders/${orderId}`);
+        // Only allow valid transitions
+        const validTransitions = {
+            'pending': ['shipped', 'out for delivery', 'delivered', 'cancelled'],
+            'shipped': ['out for delivery', 'delivered', 'cancelled'],
+            'out for delivery': ['delivered', 'cancelled'],
+            'delivered': ['return-pending', 'cancelled'],
+            'return-pending': ['returned', 'cancelled']
+        };
+        const current = order.status;
+        if (!validTransitions[current] || !validTransitions[current].includes(status)) {
+            // If trying to set to same status, allow
+            if (current !== status) {
+                return res.redirect(`/admin/orders/${orderId}`);
+            }
         }
 
-        order.status = newStatus;
-        
-        console.log(`Order status set to: ${order.status}`);
+        // Update order status
+        order.status = status;
 
-        // If the new status is 'delivered', update the status of each item that is not already cancelled or in a return state
-        if (newStatus === 'delivered') {
+        // Update item statuses if needed
+        if (status === 'delivered') {
             for (const item of order.items) {
-                // Only update item status to delivered if it's not already cancelled or in a return flow
                 if (item.status !== 'cancelled' && item.status !== 'return requested' && item.status !== 'returned' && item.status !== 'return accepted' && item.status !== 'return rejected') {
                     item.status = 'delivered';
                 }
             }
-             console.log('Item statuses updated to delivered where applicable.');
+        } else if (status === 'cancelled') {
+            for (const item of order.items) {
+                item.status = 'cancelled';
+            }
         }
 
         await order.save();
-        console.log('Order saved successfully.');
         res.redirect(`/admin/orders/${orderId}`);
     } catch (error) {
-        console.error("error in updateOrderStatus:", error);
         res.render('error', { message: 'Error updating order status' });
     }
 };

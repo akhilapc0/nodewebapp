@@ -22,10 +22,10 @@
     </div>
 </div>
 <header class="card-header text-center mb-20">
-    <form action="" method="get" class="d-inline">
-        <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin-left: 230px;">
-            <input type="text" class="form-control border-0 rounded-pill" placeholder="Search products..." name="search" value="<%= search %>">
-            <button class="btn border-0" type="submit">Search</button>
+    <form id="searchForm" method="GET" action="/admin/products" class="w-1/3">
+        <div class="relative">
+            <input type="text" name="search" placeholder="Search by name..." value="<%= search %>" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <button type="button" id="clearSearch" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800">&#10005;</button>
         </div>
     </form>
 </header>
@@ -41,7 +41,7 @@
                         <th>Sale Price</th>
                         <th>Regular Price</th>
                         <th>Offer</th>
-                        <th>Quantity</th>
+                        <th>Stock</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -61,7 +61,7 @@
                                     -
                                 <% } %>
                             </td>
-                            <td><%= product.quantity %></td>
+                            <td><%= product.stock %></td>
                             <td>
                                 <span class="badge rounded-pill alert-<%= product.isBlocked ? 'danger' : 'success' %>">
                                     <%= product.isBlocked ? 'Blocked' : 'Active' %>
@@ -85,13 +85,19 @@
     </div>
 </div>
 
-<div class="container mt-3">
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center mb-20">
-            <% for (let i = 1; i <= totalPages; i++) { %>
-                <li class="page-item <%= (i === currentPage) ? 'active' : '' %>">
-                    <a class="page-link" href="?page=<%= i %><%= search ? `&search=${search}` : '' %>"><%= i %></a>
-                </li>
+<div class="pagination-area mt-30 mb-50">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-start">
+            <% if (currentPage > 1) { %>
+                <li class="page-item"><a class="page-link" href="?page=<%= currentPage - 1 %><% if (search) { %>&search=<%= search %><% } %>"><i class="material-icons md-chevron_left"></i></a></li>
+            <% } %>
+
+            <% for(let i = 1; i <= totalPages; i++) { %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>"><a class="page-link" href="?page=<%= i %><% if (search) { %>&search=<%= search %><% } %>"><%= i %></a></li>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>
+                <li class="page-item"><a class="page-link" href="?page=<%= currentPage + 1 %><% if (search) { %>&search=<%= search %><% } %>"><i class="material-icons md-chevron_right"></i></a></li>
             <% } %>
         </ul>
     </nav>
@@ -99,4 +105,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+    document.getElementById('clearSearch').addEventListener('click', function() {
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput.value) {
+            searchInput.value = '';
+            document.getElementById('searchForm').submit();
+        }
+    });
+</script>
 <%- include("../../views/partials/admin/footer") %>

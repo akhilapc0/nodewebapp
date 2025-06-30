@@ -6,9 +6,9 @@ const userController = require('../controllers/user/userController');
 const productController = require('../controllers/user/productController');
 const wishlistController = require('../controllers/user/wishlistController');
 const orderController = require('../controllers/user/orderController'); // New import for order management
-
-// Assuming you have a userAuth middleware similar to adminAuth
 const { userAuth } = require('../middleware/auth');
+const upload = require('../middleware/upload');
+const passport = require('../config/passport');
 
 // Add the root route
 router.get('/', userController.loadHomePage);
@@ -26,11 +26,11 @@ router.get('/productDetails', userController.loadProductDetails);
 // Profile and user management routes
 router.get('/profile', userAuth, profileController.userProfile);
 router.get('/edit-profile', userAuth, profileController.getEditProfile);
-router.post('/edit-profile', userAuth, profileController.postEditProfile);
-router.post('/update-profile-image', userAuth, profileController.updateProfileImage);
+router.post('/edit-profile', userAuth, upload.single('profileImage'), profileController.postEditProfile);
+router.post('/update-profile-image', userAuth, upload.single('profileImage'), profileController.updateProfileImage);
 router.get('/change-email', userAuth, profileController.changeEmail);
 router.post('/change-email', userAuth, profileController.changeEmailValid);
-router.post('/verify-email-otp', userAuth, profileController.verifyEmailOtp);
+router.post('/verify-email-otp', profileController.verifyEmailOtp);
 router.post('/update-email', userAuth, profileController.updateEmail);
 router.get('/change-password', userAuth, profileController.changePassword);
 router.post('/change-password', userAuth, profileController.changePasswordValid);
@@ -39,9 +39,15 @@ router.post('/resend-change-pass-otp', userAuth, profileController.resendChangeP
 router.get('/forgot-password', profileController.getForgotPassPage);
 router.post('/forgot-password', profileController.forgotEmailValid);
 router.post('/verify-forgot-pass-otp', profileController.verifyForgotPassOtp);
+
+// Reset password routes (moved before dynamic order routes)
 router.get('/reset-password', profileController.getResetPassPage);
 router.post('/resend-otp', profileController.resendOtp);
-router.post('/reset-password', profileController.postNewPassword);
+router.post('/reset-password', (req, res, next) => {
+    console.log('POST /reset-password route hit');
+    console.log('Request body:', req.body);
+    next();
+}, profileController.postNewPassword);
 
 // Address management routes
 router.get('/add-address', userAuth, profileController.addAddress);
@@ -50,7 +56,7 @@ router.get('/edit-address/:id', userAuth, profileController.editAddress);
 router.post('/edit-address/:id', userAuth, profileController.updateAddress);
 router.post('/delete-address/:id', userAuth, profileController.deleteAddress);
 
-// Cart routes
+// Cart routes 
 router.post('/add-to-cart', userAuth, cartController.addToCart);
 router.get('/cart', userAuth, cartController.getCart);
 router.post('/update-quantity', userAuth, cartController.updateQuantity);
@@ -84,5 +90,19 @@ router.get('/orders/:orderId/invoice', userAuth, orderController.downloadInvoice
 
 // User notifications route
 router.get('/notifications', orderController.getUserNotifications);
+
+// Google OAuth login
+router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/auth/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: '/user/login',
+    failureFlash: true
+  }),
+  (req, res) => {
+    // Successful authentication, redirect to user home or dashboard
+    res.redirect('/user/profile');
+  }
+);
 
 module.exports = router;

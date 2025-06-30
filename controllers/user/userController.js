@@ -60,15 +60,22 @@ const loadHomePage = async (req, res) => {
         })));
 
         console.log("Products sent to home view:", newArrivals);
+        let cartCount = 0;
         if (user) {
             const userData = await User.findOne({ _id: user });
+            // Fetch cart count
+            const Cart = require('../../models/cartSchema');
+            const cart = await Cart.findOne({ user: user });
+            cartCount = cart && cart.items ? cart.items.length : 0;
             return res.render("home", {
                 user: userData,
-                products: newArrivals
+                products: newArrivals,
+                cartCount
             });
         } else {
             return res.render("home", {
-                products: newArrivals
+                products: newArrivals,
+                cartCount
             });
         }
     } catch (error) {
@@ -289,12 +296,9 @@ const logout = async (req, res) => {
 }
 
 const loadShoppingPage = async (req, res) => {
-    console.log("jgfkjgkfkgjkfkgkfgjkfjgkjfkgjkfjgkjkgkkk")
     try {
-        console.log("hohfighifghi")
         const user = req.session.user;
         const userData = await User.findOne({ _id: user });
-        
         
         const { 
             search, 
@@ -302,59 +306,53 @@ const loadShoppingPage = async (req, res) => {
             brand, 
             minPrice, 
             maxPrice, 
-            page = 1 
+            page = 1
         } = req.query;
 
-        console.log('Query Parameters:', { search, category, brand, minPrice, maxPrice, page });
-
-        
         const categories = await Category.find({ isListed: true });
-        const categoryIds = categories.map(category => category._id);
-        
-        
+        const brands = await Brand.find({ isBlocked: false });
+
+        // --- Build Filter ---
         let filter = {
             isBlocked: false,
-            quantity: { $gt: 0 }
+            stock: { $gt: 0 } // Use stock instead of quantity
         };
 
-        
-        if (category) {
+        // Category filter
+        if (category && category !== 'all' && category.length > 0) {
             filter.category = category;
         } else {
+            // Default to all listed categories if no specific one is chosen
+            const categoryIds = categories.map(c => c._id);
             filter.category = { $in: categoryIds };
         }
 
-        
-        if (brand) {
+        // Brand filter
+        if (brand && brand !== 'all' && brand.length > 0) {
             filter.brand = brand;
         }
 
-        
+        // Price filter
         if (minPrice || maxPrice) {
             filter.salesPrice = {};
             if (minPrice) filter.salesPrice.$gte = Number(minPrice);
             if (maxPrice) filter.salesPrice.$lte = Number(maxPrice);
         }
 
+        // Search filter
         if (search) {
+            const trimmedSearch = search.trim().toLowerCase();
             filter.$or = [
-                { productName: { $regex: search, $options: 'i' } },
-                { description: { $regex: search, $options: 'i' } }
+                { productName: { $regex: trimmedSearch, $options: 'i' } },
+                { description: { $regex: trimmedSearch, $options: 'i' } }
             ];
         }
-
-        
-        console.log('Final Filter:', JSON.stringify(filter, null, 2));
-
         
         const totalProducts = await Product.countDocuments(filter);
-        console.log('Total products matching filter:', totalProducts);
-
         
         const limit = 9;
         const skip = (page - 1) * limit;
 
-        
         const products = await Product.find(filter)
             .populate('category')
             .populate('brand')
@@ -362,35 +360,20 @@ const loadShoppingPage = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        
-        console.log('Products found:', products.length);
-        products.forEach(p => {
-            console.log('Product:', {
-                name: p.productName,
-                category: p.category?.name,
-                brand: p.brand?.brandName,
-                price: p.salesPrice,
-                isBlocked: p.isBlocked,
-                quantity: p.quantity
-            });
-        });
-
         const totalPages = Math.ceil(totalProducts / limit);
         
-        
-        const brands = await Brand.find({ isBlocked: false });
-        
-        
-        const categoriesWithIds = categories.map(category => ({
-            _id: category._id,
-            name: category.name
-        }));
+        let cartCount = 0;
+        if (user) {
+            const Cart = require('../../models/cartSchema');
+            const cart = await Cart.findOne({ user: user });
+            cartCount = cart && cart.items ? cart.items.length : 0;
+        }
 
         res.render("shop", {
             user: userData,
             products: products,
-            category: categoriesWithIds,
-            brand: brands,
+            category: categories, // Pass full category objects
+            brand: brands,       // Pass full brand objects
             totalProducts: totalProducts,
             currentPage: parseInt(page),
             totalPages: totalPages,
@@ -398,7 +381,8 @@ const loadShoppingPage = async (req, res) => {
             selectedCategory: category || '',
             selectedBrand: brand || '',
             minPrice: minPrice || '',
-            maxPrice: maxPrice || ''
+            maxPrice: maxPrice || '',
+            cartCount
         });
 
     } catch (error) {
@@ -417,6 +401,14 @@ const loadProductDetails = async (req, res) => {
         const user = req.session.user;
         const userData = user ? await User.findOne({ _id: user }) : null;
 
+        // Fetch cart count
+        let cartCount = 0;
+        if (user) {
+            const Cart = require('../../models/cartSchema');
+            const cart = await Cart.findOne({ user: user });
+            cartCount = cart && cart.items ? cart.items.length : 0;
+        }
+
         const product = await Product.findOne({ _id: productId, isBlocked: false })
             .populate('category')
             .populate('brand');
@@ -430,7 +422,8 @@ const loadProductDetails = async (req, res) => {
             product: product,
             category: product.category,
             brand: product.brand,
-            quantity: product.quantity
+            quantity: product.quantity,
+            cartCount
         });
 
     } catch (error) {

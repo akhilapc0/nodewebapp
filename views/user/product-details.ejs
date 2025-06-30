@@ -1,4 +1,5 @@
-<%- include("../../views/partials/user/header") %>
+<%- include("../../views/partials/user/header", { user: user, cartCount: cartCount }) %>
+<div id="cart-warning-message" style="display:none;" class="alert alert-warning text-center"></div>
 <main class="main">
  <div class="page-header breadcrumb-wrap">
      <div class="container">
@@ -54,17 +55,15 @@
                                  <h2 class="title-detail"><%= product.productName %></h2>
                                  <div class="product-detail-rating">
                                      <div class="pro-details-brand">
-                                         <span> Brand: <a href="#"><%= product.brand ? product.brand.brandName : 'N/A' %></a></span>
-                                     </div>
-                                     <div class="product-rate-cover text-end">
-                                         <div class="product-rate d-inline-block">
-                                             <div class="product-rating" style="width:90%">
-                                             </div>
-                                         </div>
-                                         <span class="font-small ml-5 text-muted"> (25 reviews)</span>
+                                         <span>Category: <%= product.category ? product.category.name : 'N/A' %></span>
                                      </div>
                                  </div>
-                                 <div class="clearfix product-price-cover">
+                                 <div class="product-detail-rating" style="margin-top: 10px;">
+                                     <div class="pro-details-brand">
+                                         <span>Brand: <%= product.brand ? product.brand.brandName : 'N/A' %></span>
+                                     </div>
+                                 </div>
+                                 <div class="clearfix product-price-cover" style="margin-top: 20px;">
                                      <div class="product-price primary-color float-left">
                                          <ins><span class="text-brand">₹<%= product.salesPrice %></span></ins>
                                          <% if (product.regularPrice > product.salesPrice) { %>
@@ -109,7 +108,15 @@
                                              <a href="#" rel="tag"><%= category.name %></a>
                                          <% } %>
                                      </li>
-                                     <li>Availability: <span class="in-stock text-success ml-5"><%= quantity %> Items in stock</span></li>
+                                     <li>Availability: 
+                                         <% if (product.stock === 0) { %>
+                                             <span class="text-danger ml-5">Out of Stock</span>
+                                         <% } else if (product.stock === 1) { %>
+                                             <span class="text-warning ml-5">Only 1 left! Minimum stock reached</span>
+                                         <% } else { %>
+                                             <span class="in-stock text-success ml-5"><%= product.stock %> Items in stock</span>
+                                         <% } %>
+                                     </li>
                                  </ul>
                              </div>
                          </div>
@@ -211,11 +218,18 @@ function addToCart(productId) {
                 showConfirmButton: false
             });
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: data.error || 'Failed to add to cart'
-            });
+            if (data.error && data.error === 'Maximum quantity reached') {
+                const warnMsg = document.getElementById('cart-warning-message');
+                warnMsg.textContent = 'Product is already added to cart (maximum allowed quantity reached).';
+                warnMsg.style.display = 'block';
+                setTimeout(() => { warnMsg.style.display = 'none'; }, 2000);
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: data.error || 'Failed to add to cart'
+                });
+            }
         }
     })
     .catch(error => {

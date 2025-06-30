@@ -11,14 +11,14 @@
       href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
-    <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css" />
-    <link rel="stylesheet" href="css/elegant-icons.css" type="text/css" />
-    <link rel="stylesheet" href="css/magnific-popup.css" type="text/css" />
-    <link rel="stylesheet" href="css/nice-select.css" type="text/css" />
-    <link rel="stylesheet" href="css/owl.carousel.min.css" type="text/css" />
-    <link rel="stylesheet" href="css/slicknav.min.css" type="text/css" />
-    <link rel="stylesheet" href="css/style.css" type="text/css" />
+    <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="/css/font-awesome.min.css" type="text/css" />
+    <link rel="stylesheet" href="/css/elegant-icons.css" type="text/css" />
+    <link rel="stylesheet" href="/css/magnific-popup.css" type="text/css" />
+    <link rel="stylesheet" href="/css/nice-select.css" type="text/css" />
+    <link rel="stylesheet" href="/css/owl.carousel.min.css" type="text/css" />
+    <link rel="stylesheet" href="/css/slicknav.min.css" type="text/css" />
+    <link rel="stylesheet" href="/css/style.css" type="text/css" />
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
       rel="stylesheet"
@@ -102,107 +102,119 @@
         font-size: 0.75rem;
         display: none;
       }
+      @media (max-width: 768px) {
+        .signup-section {
+          flex-direction: column;
+        }
+        .signup-form, .signup-image {
+          max-width: 100% !important;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="container mt-5 mb-1">
       <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10 col-lg-8">
           <div class="card">
-            <div class="card-body signup-section">
-              <div class="signup-form">
-                <h3 class="card-title text-center">Sign Up</h3>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h3 class="card-title text-center">Sign Up</h3>
 
-                <form id="signform" method="post" action="/signup">
-                  <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      name="name"
-                      id="name"
-                      placeholder="Enter Name"
-                    />
-                    <div id="error1" class="error-message"></div>
-                  </div>
-                  <div class="form-group">
-                    <label for="email">Email address</label>
-                    <input
-                      type="email"
-                      class="form-control"
-                      name="email"
-                      id="email"
-                      placeholder="Enter email"
-                    />
-                    <div id="error2" class="error-message"></div>
-                  </div>
-                  <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      name="phone"
-                      id="phone"
-                      placeholder="Enter phone number"
-                    />
-                    <div id="error3" class="error-message"></div>
-                  </div>
-                  <div class="form-group">
-                    <label for="password">Password</label>
-                    <input
-                      type="password"
-                      class="form-control"
-                      name="password"
-                      id="password"
-                      placeholder="Password"
-                    />
-                    <div id="error4" class="error-message"></div>
-                  </div>
-                  <div class="form-group">
-                    <label for="confirm-password">Confirm Password</label>
-                    <input
-                      type="password"
-                      class="form-control"
-                      name="cpassword"
-                      id="confirm-password"
-                      placeholder="Confirm Password"
-                    />
-                    <div id="error5" class="error-message"></div>
-                  </div>
-                  <%if(locals.message && message.length>0){%>
-                    <div class="alert alert-danger text-center">
-                      <%=message%>
+                  <form id="signform" method="post" action="/user/signup">
+                    <div class="form-group">
+                      <label for="name">Full Name</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="name"
+                        id="name"
+                        placeholder="Enter Name"
+                      />
+                      <div id="error1" class="error-message"></div>
                     </div>
-                    <%}%>
-                  <div
-                    class="d-flex justify-content-between align-items-center"
-                  >
-                    <button type="submit" class="btn btn-primary">
-                      Sign Up
-                    </button>
-                    <div class="mt-2px">
-                      <p>or sign up with</p>
+                    <div class="form-group">
+                      <label for="email">Email address</label>
+                      <input
+                        type="email"
+                        class="form-control"
+                        name="email"
+                        id="email"
+                        placeholder="Enter email"
+                      />
+                      <div id="error2" class="error-message"></div>
                     </div>
-                    <div class="social-btns">
-                      <a href="/auth/google" class="btn btn-outline-danger">
-                        <img
-                          src="img/googlesignup.png"
-                          alt="Google Logo"
-                          style="width: 24px; height: 24px"
-                        />
-                      </a>
+                    <div class="form-group">
+                      <label for="phone">Phone Number</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="phone"
+                        id="phone"
+                        placeholder="Enter phone number"
+                      />
+                      <div id="error3" class="error-message"></div>
+                    </div>
+                    <div class="form-group">
+                      <label for="password">Password</label>
+                      <input
+                        type="password"
+                        class="form-control"
+                        name="password"
+                        id="password"
+                        placeholder="Password"
+                      />
+                      <div id="error4" class="error-message"></div>
+                    </div>
+                    <div class="form-group">
+                      <label for="confirm-password">Confirm Password</label>
+                      <input
+                        type="password"
+                        class="form-control"
+                        name="cpassword"
+                        id="confirm-password"
+                        placeholder="Confirm Password"
+                      />
+                      <div id="error5" class="error-message"></div>
+                    </div>
+                    <%if(locals.message && message.length>0){%>
+                      <div class="alert alert-danger text-center">
+                        <%=message%>
+                      </div>
+                      <%}%>
+                    <div
+                      class="d-flex justify-content-between align-items-center"
+                    >
+                      <button type="submit" class="btn btn-primary">
+                        Sign Up
+                      </button>
+                      <div class="mt-2px">
+                        <p>or sign up with</p>
+                      </div>
+                      <div class="social-btns">
+                        <a href="/user/auth/google" class="btn btn-outline-danger">
+                          <img
+                            src="/img/googlesignup.png"
+                            alt="Google Logo"
+                            style="width: 24px; height: 24px"
+                          />
+                        </a>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+                <div class="col-md-6">
+                  <div class="signup-image d-flex flex-column align-items-center justify-content-center">
+                    <a href="/">
+                      <img src="/img/signimage.png" alt="Shopping Site" />
+                    </a>
+                    <div class="text-center mt-2">
+                      <a href="#" class="sign-in-link"
+                        >Already registered? Log in</a
+                      >
                     </div>
                   </div>
-                </form>
-              </div>
-              <div class="signup-image">
-                <a href="/">
-                  <img src="img/signimage.png" alt="Shopping Site" />
-                </a>
-                <div class="text-center mt-2">
-                  <a href="#" class="sign-in-link"
-                    >Already registered? Log in</a
-                  >
                 </div>
               </div>
             </div>

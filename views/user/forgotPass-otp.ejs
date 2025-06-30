@@ -85,6 +85,9 @@
    <div class="text-muted text-center">
      Already verified? <a href="/user/login">Login now</a>
    </div>
+   <a href="/user/auth/google" class="btn btn-outline-danger w-100 mb-2">
+     <img src="/img/googlesignup.png" alt="Google Logo" style="width: 24px; height: 24px; margin-right: 8px;" /> Google
+   </a>
  </div>
 </div>
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -143,7 +146,7 @@ function validateOtpForm(){
     const otpInput=document.getElementById('otp').value;
     $.ajax({
         type:'POST',
-        url:'/verify-passForgot-otp',
+        url:'/user/verify-forgot-pass-otp',
         data:{otp:otpInput},
         success:function(response){
             if(response.success){
@@ -163,11 +166,25 @@ function validateOtpForm(){
               })  
             }
         },
-        error:function(){
+        error:function(xhr){
+            let msg = 'Failed to verify OTP. Please try again';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                msg = xhr.responseJSON.message;
+                if(msg.includes('No email found in session')){
+                    Swal.fire({
+                        icon:'error',
+                        title:'Session Expired',
+                        text: msg
+                    }).then(()=>{
+                        window.location.href='/user/forgot-password';
+                    });
+                    return;
+                }
+            }
             Swal.fire({
                 icon:'error',
                 title:'Error',
-                text:'failed to verify OTP.please try again'
+                text: msg
             })
         }
     });
@@ -180,7 +197,7 @@ function resendOtp(){
     startOtpTimer();
     $.ajax({
         type:'POST',
-        url:"/resend-forgot-otp",
+        url:'/user/resend-otp',
         success:function(response){
             if(response.success){
                 Swal.fire({
@@ -188,26 +205,37 @@ function resendOtp(){
                     title:'Reset OTP successful',
                     showConfirmButtom:false,
                     timer:1500,
-
-
                 })
             }else{
                 Swal.fire({
                     icon:'error',
                     title:'Error',
-                    text:'Failed to resend OTP.please try again'
+                    text:response.message
                 })
             }
         },
-        error:function (){
+        error:function(xhr){
+            let msg = 'Failed to resend OTP. Please try again';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                msg = xhr.responseJSON.message;
+                if(msg.includes('No email found in session')){
+                    Swal.fire({
+                        icon:'error',
+                        title:'Session Expired',
+                        text: msg
+                    }).then(()=>{
+                        window.location.href='/user/forgot-password';
+                    });
+                    return;
+                }
+            }
             Swal.fire({
                 icon:'error',
                 title:'Error',
-                text:"Failed to resend OTP,please try again"
+                text: msg
             })
-
         }
-    })
+    });
 }
 
 

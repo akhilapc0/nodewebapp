@@ -2,21 +2,99 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6 mt-60">
-            <form method="post" action="/admin/edit-category/<%= category._id %>">
+            <form id="editCategoryForm" method="post" action="/admin/edit-category/<%= category._id %>">
                 <div class="d-grid text-end mt-30 col-md-5">
                     <button class="btn btn-primary" type="submit">Update category</button>
                 </div>
                 <div class="mb-4 mt-30">
                     <label for="product_name" class="form-label">Name</label>
-                    <input type="text" name="categoryName" value="<%=category.name%>" class="form-control border" />
+                    <input type="text" name="categoryName" id="categoryName" value="<%=category.name%>" class="form-control border" />
+                    <div id="name-error" class="error-message"></div>
                 </div>
-                
                 <div class="mb-4">
                     <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control border"><%= category.description %></textarea>
+                    <textarea name="description" id="descriptionId" class="form-control border"><%= category.description %></textarea>
+                    <div id="description-error" class="error-message"></div>
                 </div>
             </form>
         </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+const originalName = `<%= category.name.replace(/'/g, "\\'") %>`.trim();
+const originalDescription = `<%= category.description.replace(/'/g, "\\'") %>`.trim();
+
+document.getElementById('editCategoryForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    clearErrorMessages();
+    const name = document.getElementById('categoryName').value.trim();
+    const description = document.getElementById('descriptionId').value.trim();
+    let isValid = true;
+    if(name === "") {
+        displayErrorMessage("name-error", "Please enter a name");
+        isValid = false;
+    } else if(!/^[a-zA-Z\s]+$/.test(name)) {
+        displayErrorMessage("name-error", "Category name should only contain alphabetic characters");
+        isValid = false;
+    }
+    if(description === "") {
+        displayErrorMessage("description-error", "Please enter a description");
+        isValid = false;
+    }
+    if(!isValid) return;
+
+    // Always submit, no prompt for no changes
+    fetch(`/admin/edit-category/<%= category._id %>`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ categoryName: name, description })
+    })
+    .then(async response => {
+        if(response.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Category Updated Successfully',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                window.location.href = '/admin/category';
+            });
+        } else {
+            return response.json().then(err => { throw new Error(err.error); });
+        }
+    })
+    .catch(error => {
+        if(error.message && error.message.toLowerCase().includes('exist')) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops',
+                text: 'Category already exists (case-insensitive)'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops',
+                text: 'An error occurred while updating the category'
+            });
+        }
+    });
+});
+
+function displayErrorMessage(elementId, message) {
+    var ErrorElement = document.getElementById(elementId);
+    ErrorElement.innerText = message;
+    ErrorElement.style.display = "block";
+}
+function clearErrorMessages() {
+    const ErrorElements = document.getElementsByClassName("error-message");
+    Array.from(ErrorElements).forEach((element) => {
+        element.innerText = "";
+        element.style.display = "none";
+    });
+}
+</script>
 <%- include("../../views/partials/admin/footer") %>

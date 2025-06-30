@@ -5,48 +5,57 @@ const categoryInfo=async (req,res)=>{
         const page=parseInt(req.query.page )|| 1;
         const limit=4;
         const skip=(page-1)*limit;
-        const categoryData=await Category.find({})
+        const search = req.query.search ? req.query.search.trim() : '';
+        let query = {};
+        if (search) {
+            query = { name: { $regex: search, $options: 'i' } };
+        }
+        const categoryData=await Category.find(query)
         .sort({createdAt:-1})
         .skip(skip)
         .limit(limit);
-        const totalCategories=await Category.countDocuments();
+        const totalCategories=await Category.countDocuments(query);
         const totalPages=Math.ceil(totalCategories / limit)
         res.render("category",{
             cat:categoryData,
-        currentPage:page,
-        totalPages:totalPages,
-        totalCategories:totalCategories,
-        
-
-
+            currentPage:page,
+            totalPages:totalPages,
+            totalCategories:totalCategories,
+            search: search
         });
     }
     catch(error){
         console.error(error);
         res.redirect("/pageerror")
     }
-
 }
+
 const addCategory=async(req,res)=>{
     const{name,description}=req.body;
     try{
-        const existingCategory=await Category.findOne({name});
+        if(!name || !description) {
+            return res.status(400).json({error: "Name and description are required"});
+        }
+        // Case-insensitive duplicate check
+        const existingCategory=await Category.findOne({name: { $regex: `^${name}$`, $options: 'i' }});
         if(existingCategory){
-            return res.status(400).send({error:"category alreday exist"});
+            return res.status(400).json({error:"Category already exists"});
         }
         const newCategory=new Category({
             name,
             description
         })
         await newCategory.save();
-        return res.json({message:"Category added successfully"})
-
+        return res.status(200).json({message:"Category created successfully"})
     }
     catch(error){
-        return res.status(500).json({error:"internal server error"})
+        console.error("Error while creating category:", error);
+        if(error.code === 11000) {
+            return res.status(400).json({error: "Category already exists"});
+        }
+        return res.status(500).json({error:"An error occurred while adding the category"})
     }
 }
-
 
 const getListCategory=async(req,res)=>{
     try{
@@ -93,24 +102,28 @@ const editCategory=async(req,res)=>{
     try{
         const id=req.params.id;
         const{categoryName,description}=req.body;
-        const existingCategory=await Category.findOne({name:categoryName})
-        if(existingCategory){
-            return res.status(400).json({error:"category exist please choose another name"})
+        const category = await Category.findById(id);
+        if (!category) {
+            return res.status(404).json({error:"category not found"});
         }
-        const updateCategory=await Category.findByIdAndUpdate(id,{
+        // Case-insensitive duplicate check, excluding current category
+        const existingCategory = await Category.findOne({
+            name: { $regex: `^${categoryName}$`, $options: 'i' },
+            _id: { $ne: id }
+        });
+        if(existingCategory){
+            return res.status(400).json({error:"Category already exists"})
+        }
+        // Always update, even if no changes
+        await Category.findByIdAndUpdate(id,{
             name:categoryName,
             description:description,
-
         },{new:true})
-        if(updateCategory){
-            res.redirect("/admin/category")
-        }else{
-            res.status(404).json({error:"category not found"})
-        }
+        return res.status(200).json({message: "Category updated successfully"});
     }
     catch(error){
-        res.status(500).json({error:"internal server error"})
-
+        console.error("Error while updating category:", error);
+        res.status(500).json({error:"An error occurred while updating the category"})
     }
 }
 

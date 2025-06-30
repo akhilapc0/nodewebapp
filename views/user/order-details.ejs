@@ -128,10 +128,10 @@
                 <% } %>
 
                 <div class="mt-4">
-                    <p class="text-gray-600 mb-1"><strong>Subtotal:</strong> ₹<%= order.subtotal %></p>
-                    <p class="text-gray-600 mb-1"><strong>Tax:</strong> ₹<%= order.tax %></p>
-                    <p class="text-gray-600 mb-1"><strong>Discount:</strong> ₹<%= order.discount %></p>
-                    <h3 class="text-lg font-bold text-gray-800">Final Total: ₹<%= order.finalTotal %></h3>
+                    <p class="text-gray-600 mb-1"><strong>Subtotal:</strong> ₹<%= Math.round(order.subtotal) %></p>
+                    <p class="text-gray-600 mb-1"><strong>Tax:</strong> ₹<%= Math.round(order.tax) %></p>
+                    <p class="text-gray-600 mb-1"><strong>Discount:</strong> ₹<%= Math.round(order.discount) %></p>
+                    <h3 class="text-lg font-bold text-gray-800">Final Total: ₹<%= Math.round(order.finalTotal) %></h3>
                 </div>
 
                 <a href="/user/orders/<%= order.orderID %>/invoice" class="btn btn-success btn-sm mt-4 inline-block">Download Invoice</a>
