@@ -488,12 +488,7 @@
           <% cart.items.forEach(item => { %>
             <div class="cart-item" id="cart-item-<%= item.product._id %>">
               <a href="/user/productDetails?id=<%= item.product._id %>" class="item-image">
-                <% 
-                  let imgSrc = (item.product.productImage && item.product.productImage.length > 0 && item.product.productImage[0]) 
-                    ? `/uploads/re-image/${encodeURIComponent(item.product.productImage[0])}` 
-                    : '/public/img/product/default-product.png'; // fallback image
-                %>
-                <img src="<%= imgSrc %>" alt="<%= item.product.productName %>" onerror="this.onerror=null;this.src='/public/img/product/default-product.png';">
+                <img src="/uploads/product-images/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>" class="item-image" onerror="this.onerror=null;this.src='/img/product/default-product.png';">
               </a>
               
               <div class="item-details">

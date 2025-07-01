@@ -440,9 +440,9 @@ const addAddress = async (req, res) => {
 const postAddAddress = async (req, res) => {
     try {
         const userId = req.session.user;
-        const { addressType, name, city, landMark, state, pincode, phone, altPhone, isDefault } = req.body;
+        const { addressType, name, street, city, landMark, state, pincode, phone, altPhone, isDefault } = req.body;
 
-        if (!name || !city || !state || !pincode || !phone) {
+        if (!name || !street || !city || !state || !pincode || !phone) {
             return res.status(400).json({ success: false, message: "Please fill in all required fields" });
         }
 
@@ -451,13 +451,14 @@ const postAddAddress = async (req, res) => {
         const newAddressData = {
             addressType: addressType || 'Other',
             name,
+            street,
             city,
             landMark,
             state,
             pincode,
             phone,
             altPhone,
-            isDefault: isDefault === 'on'
+            isDefault: isDefault === 'on' || isDefault === true
         };
 
         if (!userAddress) {
@@ -472,6 +473,9 @@ const postAddAddress = async (req, res) => {
                 userAddress.address.forEach(addr => {
                     addr.isDefault = false;
                 });
+            } else if (userAddress.address.length === 0) {
+                // If this is the first address, make it default
+                newAddressData.isDefault = true;
             }
             userAddress.address.push(newAddressData);
             await userAddress.save();
@@ -492,22 +496,31 @@ const editAddress = async (req, res) => {
         
         const userAddress = await Address.findOne({ userId });
         if (!userAddress) {
-            return res.redirect("/user/profile");
+            return res.status(404).json({ success: false, message: "User addresses not found" });
         }
 
         const address = userAddress.address.id(addressId);
         if (!address) {
-            return res.redirect("/user/profile");
+            return res.status(404).json({ success: false, message: "Address not found" });
         }
 
-        res.render("edit-address", {
-            user: req.session.user,
-            address: address,
-            message: null
+        res.json({
+            success: true,
+            _id: address._id,
+            addressType: address.addressType,
+            name: address.name,
+            street: address.street,
+            city: address.city,
+            landMark: address.landMark,
+            state: address.state,
+            pincode: address.pincode,
+            phone: address.phone,
+            altPhone: address.altPhone,
+            isDefault: address.isDefault
         });
     } catch (error) {
         console.error("Error in editAddress:", error);
-        res.redirect("/user/profile");
+        res.status(500).json({ success: false, message: "Error fetching address details" });
     }
 };
 
@@ -515,9 +528,9 @@ const updateAddress = async (req, res) => {
     try {
         const userId = req.session.user;
         const addressId = req.params.id;
-        const { addressType, name, city, landMark, state, pincode, phone, altPhone } = req.body;
+        const { addressType, name, street, city, landMark, state, pincode, phone, altPhone, isDefault } = req.body;
 
-        if (!addressType || !name || !city || !state || !pincode || !phone) {
+        if (!addressType || !name || !street || !city || !state || !pincode || !phone) {
             return res.status(400).json({ success: false, message: "Please fill in all required fields" });
         }
 
@@ -530,9 +543,17 @@ const updateAddress = async (req, res) => {
         if (!address) {
             return res.status(404).json({ success: false, message: "Address not found" });
         }
+
+        if (isDefault === 'on' || isDefault === true) {
+            userAddress.address.forEach(addr => {
+                addr.isDefault = false;
+            });
+            address.isDefault = true;
+        }
         
         address.addressType = addressType;
         address.name = name;
+        address.street = street;
         address.city = city;
         address.landMark = landMark;
         address.state = state;

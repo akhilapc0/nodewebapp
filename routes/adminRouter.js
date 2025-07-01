@@ -57,6 +57,10 @@ router.post("/orders/:orderId/status", adminAuth, orderController.updateOrderSta
 router.post("/orders/:orderId/return", adminAuth, orderController.verifyReturn);
 router.get('/return-requests', orderController.getAllReturnRequests);
 
+// Per-item return management
+router.post('/returns/:orderId/:itemId/approve', adminAuth, orderController.approveReturnItem);
+router.post('/returns/:orderId/:itemId/reject', adminAuth, orderController.rejectReturnItem);
+
 module.exports = router; 
 
 

@@ -50,7 +50,7 @@ app.set('views', [
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // Parse JSON and URL-encoded bodies
 app.use(express.json());

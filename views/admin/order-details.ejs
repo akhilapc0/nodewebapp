@@ -62,11 +62,36 @@
                                     <td>₹<%= item.price %></td>
                                     <td>₹<%= item.quantity * item.price %></td>
                                     <td>
-                                        <span class="badge rounded-pill alert-<%= item.status === 'delivered' ? 'success' : item.status === 'cancelled' ? 'danger' : item.status === 'return requested' ? 'info' : 'warning' %>">
+                                        <span class="badge rounded-pill alert-<%= item.status === 'delivered' ? 'success' : item.status === 'cancelled' ? 'danger' : item.status === 'return requested' ? 'info' : item.status === 'returned' ? 'primary' : item.status === 'return rejected' ? 'danger' : 'warning' %>">
                                             <%= item.status === 'cancelled' ? 'Cancelled' : item.status %>
                                         </span>
                                         <% if (item.status === 'cancelled' && item.cancellationReason) { %>
                                             <div class="text-xs text-red-500">Reason: <%= item.cancellationReason %></div>
+                                        <% } %>
+                                        <% if (item.status === 'return requested') { %>
+                                            <button 
+  class="btn btn-success btn-sm approve-return-btn" 
+  data-order-id="<%= order.orderID %>" 
+  data-item-id="<%= item._id %>">
+  Approve
+</button>
+                                            <form action="/admin/returns/<%= order.orderID %>/<%= item._id %>/reject" method="POST" style="display:inline-block; margin-top:4px;">
+                                                <input type="text" name="adminNotes" placeholder="Reason (optional)" class="form-control form-control-sm" style="width:120px;display:inline-block;">
+                                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                            </form>
+                                        <% } %>
+                                        <% if (["ordered", "shipped", "out for delivery", "delivered"].includes(item.status)) { %>
+                                            <form action="/admin/orders/<%= order.orderID %>/status" method="POST" style="display:inline-block; margin-top:4px;">
+                                                <input type="hidden" name="itemId" value="<%= item._id %>">
+                                                <select name="status" class="form-control form-control-sm" style="width:auto;display:inline-block;">
+                                                    <option value="ordered" <%= item.status === 'ordered' ? 'selected' : '' %>>Ordered</option>
+                                                    <option value="shipped" <%= item.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+                                                    <option value="out for delivery" <%= item.status === 'out for delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                                                    <option value="delivered" <%= item.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+                                                    <option value="cancelled">Cancel</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                            </form>
                                         <% } %>
                                     </td>
                                 </tr>
@@ -165,6 +190,49 @@
         }
         return true;
     }
+    
+  document.querySelectorAll('.approve-return-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+      const orderId = button.dataset.orderId;
+      const itemId = button.dataset.itemId;
+
+      try {
+        const res = await fetch(`/admin/returns/${orderId}/${itemId}/approve`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Return Approved',
+            text: data.message
+          }).then(() => {
+            window.location.reload(); // refresh UI
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Approval Failed',
+            text: data.message || 'Something went wrong.'
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Server error. Please try again later.'
+        });
+      }
+    });
+  });
+
+
 
     // Check for return action query parameter and display confirmation message
     const urlParams = new URLSearchParams(window.location.search);

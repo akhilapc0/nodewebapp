@@ -74,20 +74,24 @@ const addressSchema = new Schema({
             type: String,
             required: true
         },
+        street: {
+            type: String,
+            required: true
+        },
         city: {
             type: String,
             required: true
         },
         landMark: {
             type: String,
-            required: true
+            required: false
         },
         state: {
             type: String,
             required: true
         },
         pincode: {
-            type: Number,
+            type: String,
             required: true
         },
         phone: {
@@ -96,14 +100,14 @@ const addressSchema = new Schema({
         },
         altPhone: {
            type: String,
-           required: true 
+           required: false
         },
-        isDefault: { // Added to mark one address as the default
+        isDefault: {
             type: Boolean,
             default: false
         }
     }]
-}, { timestamps: true }); // Added timestamps for createdAt and updatedAt
+}, { timestamps: true });
 
 const Address = mongoose.model('Address', addressSchema);
 module.exports = Address;

@@ -1,6 +1,7 @@
 const Order = require('../../models/orderSchema');
 const User = require('../../models/userSchema');
 const Product = require('../../models/productSchema');
+const { _determineOrderStatusFromItems } = require('../user/orderController');
 
 // Get all orders with pagination, search, sort, and filter
 exports.getAllOrders = async (req, res) => {
@@ -67,7 +68,7 @@ exports.getAdminOrderDetails = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
     try {
         const { orderId } = req.params;
-        let { status } = req.body;
+        let { status, itemId } = req.body;
         status = status.toLowerCase();
 
         const order = await Order.findOne({ orderID: orderId });
@@ -80,38 +81,30 @@ exports.updateOrderStatus = async (req, res) => {
             return res.redirect(`/admin/orders/${orderId}`);
         }
 
-        // Only allow valid transitions
+        // Only allow valid transitions for item
         const validTransitions = {
-            'pending': ['shipped', 'out for delivery', 'delivered', 'cancelled'],
+            'ordered': ['shipped', 'out for delivery', 'delivered', 'cancelled'],
             'shipped': ['out for delivery', 'delivered', 'cancelled'],
             'out for delivery': ['delivered', 'cancelled'],
             'delivered': ['return-pending', 'cancelled'],
             'return-pending': ['returned', 'cancelled']
         };
-        const current = order.status;
+
+        // Update only the selected item
+        const item = order.items.id(itemId);
+        if (!item) {
+            return res.render('error', { message: 'Item not found in order' });
+        }
+        const current = item.status;
         if (!validTransitions[current] || !validTransitions[current].includes(status)) {
-            // If trying to set to same status, allow
             if (current !== status) {
                 return res.redirect(`/admin/orders/${orderId}`);
             }
         }
+        item.status = status;
 
-        // Update order status
-        order.status = status;
-
-        // Update item statuses if needed
-        if (status === 'delivered') {
-            for (const item of order.items) {
-                if (item.status !== 'cancelled' && item.status !== 'return requested' && item.status !== 'returned' && item.status !== 'return accepted' && item.status !== 'return rejected') {
-                    item.status = 'delivered';
-                }
-            }
-        } else if (status === 'cancelled') {
-            for (const item of order.items) {
-                item.status = 'cancelled';
-            }
-        }
-
+        // After updating the item, update the overall order status
+        order.status = _determineOrderStatusFromItems(order.items);
         await order.save();
         res.redirect(`/admin/orders/${orderId}`);
     } catch (error) {
@@ -217,17 +210,121 @@ exports.verifyReturn = async (req, res) => {
     }
 };
 
-// Add this new controller to list all return requests
+// Fix: Show all orders with at least one item in 'return requested' status
 exports.getAllReturnRequests = async (req, res) => {
     try {
-        // Find all orders with status 'return-pending'
-        const returnOrders = await Order.find({ status: 'return-pending' })
+        // Find all orders where at least one item has status 'return requested'
+        const returnOrders = await Order.find({ 'items.status': 'return requested' })
             .populate('user items.product');
         res.render('admin/return-requests', { returnOrders });
     } catch (error) {
         console.error("Error fetching return requests:", error);
         res.render('error', { message: 'Error fetching return requests' });
     }
+};
+
+// Add per-item return approval
+exports.approveReturnItem = async (req, res) => {
+  try {
+    const { orderId, itemId } = req.params;
+    console.log('--- ADMIN APPROVE RETURN ITEM ---');
+    console.log('Order ID:', orderId);
+    console.log('Item ID:', itemId);
+    const order = await Order.findOne({ orderID: orderId }).populate('user items.product');
+    if (!order) {
+      console.log('Order not found');
+      return res.render('error', { message: 'Order not found' });
+    }
+    const item = order.items.id(itemId);
+    if (!item) {
+      console.log('Item not found in order');
+      return res.render('error', { message: 'Item not found in order.' });
+    }
+    console.log('Item status before:', item.status);
+    if (item.status !== 'return requested') {
+      console.log('Return request not found for this item. Status:', item.status);
+      return res.render('error', { message: 'Return request not found for this item.' });
+    }
+    item.status = 'returned';
+    const refundAmount = item.price * item.quantity;
+    await User.findByIdAndUpdate(order.user, { $inc: { walletBalance: refundAmount } });
+    await Product.findByIdAndUpdate(item.product._id, {
+      $inc: { stock: item.quantity },
+      stockLastUpdated: Date.now()
+    });
+    await User.findByIdAndUpdate(order.user, {
+      $push: {
+        notifications: {
+          message: `Your return request for '${item.product.productName}' in order ${order.orderID} has been approved. Refund of ₹${refundAmount} has been credited to your wallet.`,
+          date: new Date(),
+          read: false
+        }
+      }
+    });
+    await order.save();
+    order.status = _determineOrderStatusFromItems(order.items);
+    await order.save();
+    console.log('Item status after:', item.status);
+    console.log('Order status after:', order.status);
+    if (req.xhr || req.headers.accept.indexOf('application/json') > -1) {
+      return res.json({ success: true, message: 'Return approved and refund processed.' });
+    } else {
+      return res.redirect('/admin/return-requests?action=approved');
+    }
+  } catch (error) {
+    console.error('Error in approveReturnItem:', error);
+    res.render('error', { message: 'Error approving return request for item.' });
+  }
+};
+
+// Add per-item return rejection
+exports.rejectReturnItem = async (req, res) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const { adminNotes } = req.body;
+    console.log('--- ADMIN REJECT RETURN ITEM ---');
+    console.log('Order ID:', orderId);
+    console.log('Item ID:', itemId);
+    const order = await Order.findOne({ orderID: orderId }).populate('user items.product');
+    if (!order) {
+      console.log('Order not found');
+      return res.render('error', { message: 'Order not found' });
+    }
+    const item = order.items.id(itemId);
+    if (!item) {
+      console.log('Item not found in order');
+      return res.render('error', { message: 'Item not found in order.' });
+    }
+    console.log('Item status before:', item.status);
+    if (item.status !== 'return requested') {
+      console.log('Return request not found for this item. Status:', item.status);
+      return res.render('error', { message: 'Return request not found for this item.' });
+    }
+    item.status = 'return rejected';
+    if (adminNotes) order.adminNotes = adminNotes;
+    await User.findByIdAndUpdate(order.user, {
+      $push: {
+        notifications: {
+          message: `Your return request for '${item.product.productName}' in order ${order.orderID} has been rejected by the admin.${adminNotes ? ' Reason: ' + adminNotes : ''}`,
+          date: new Date(),
+          read: false
+        }
+      }
+    });
+    await order.save();
+    order.status = _determineOrderStatusFromItems(order.items);
+    await order.save();
+    console.log('Item status after:', item.status);
+    console.log('Order status after:', order.status);
+    if (req.xhr || req.headers.accept.indexOf('application/json') > -1) {
+      return res.json({ success: true, message: 'Return request rejected.' });
+    } else {
+      return res.redirect('/admin/return-requests?action=rejected');
+    }
+  } catch (error) {
+    console.error('Error in rejectReturnItem:', error);
+    res.render('error', { message: 'Error rejecting return request for item.' });
+  }
 };
 
 

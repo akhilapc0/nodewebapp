@@ -1,5 +1,7 @@
 <%- include("../../views/partials/admin/header") %>
 
+<div>DEBUG: This is the correct file</div>
+
 <div class="container mt-5">
     <h1 class="text-3xl font-bold mb-6 text-gray-800">Return Requests</h1>
     <div class="table-responsive">
@@ -14,27 +16,49 @@
                 </tr>
             </thead>
             <tbody>
-                <% returnOrders.forEach(order => { %>
-                    <tr>
-                        <td><%= order.orderID %></td>
-                        <td><%= order.user.name %></td>
-                        <td><%= order.returnReason %></td>
-                        <td>₹<%= order.finalTotal %></td>
-                        <td>
-                            <form action="/admin/orders/<%= order.orderID %>/return" method="POST" style="display:inline-block;">
-                                <input type="hidden" name="verified" value="true">
-                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
-                            </form>
-                            <form action="/admin/orders/<%= order.orderID %>/return" method="POST" style="display:inline-block;">
-                                <input type="hidden" name="verified" value="false">
-                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                            </form>
-                        </td>
-                    </tr>
-                <% }) %>
+                <% returnOrders.forEach(order => {
+                    order.items.forEach(item => {
+                        if (item.status === 'return requested') { %>
+                            <tr>
+                                <td><%= order.orderID %></td>
+                                <td><%= order.user.name %></td>
+                                <td><%= item.returnReason %></td>
+                                <td>₹<%= item.price * item.quantity %></td>
+                                <td>
+                                    <form action="/admin/returns/<%= order.orderID %>/<%= item._id %>/approve" method="POST" class="approve-return-form" style="display:inline-block;">
+                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                    </form>
+                                    <form action="/admin/returns/<%= order.orderID %>/<%= item._id %>/reject" method="POST" class="reject-return-form" style="display:inline-block;">
+                                        <input type="text" name="adminNotes" placeholder="Reason (optional)" class="form-control form-control-sm" style="width:120px;display:inline-block;">
+                                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }
+                    });
+                }); %>
             </tbody>
         </table>
     </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+<script>
+$(function() {
+  $(document).on('submit', 'form.approve-return-form', function(e) {
+    e.preventDefault();
+    Swal.fire({ icon: 'success', title: 'Return Approved', text: 'The return request has been approved successfully.' });
+    $(this).closest('tr').remove();
+    return false;
+  });
+  $(document).on('submit', 'form.reject-return-form', function(e) {
+    e.preventDefault();
+    Swal.fire({ icon: 'error', title: 'Return Rejected', text: 'The return request has been rejected.' });
+    $(this).closest('tr').remove();
+    return false;
+  });
+});
+</script>
 
 <%- include("../../views/partials/admin/footer") %> 

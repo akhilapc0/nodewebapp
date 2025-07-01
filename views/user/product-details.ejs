@@ -23,7 +23,7 @@
                                          <% product.productImage.forEach((image, index) => { %>
                                              <figure class="border-radius-10">
                                                  <div class="zoom-container">
-                                                     <img src="/uploads/re-image/<%= image %>" alt="product image" class="zoom-img">
+                                                     <img src="/uploads/product-images/<%= image %>" alt="product image" class="zoom-img">
                                                      <div class="zoom-lens"></div>
                                                      <div class="zoom-result"></div>
                                                  </div>
@@ -43,7 +43,7 @@
                                      <% if (product.productImage && product.productImage.length > 0) { %>
                                          <% product.productImage.forEach((image, index) => { %>
                                              <div>
-                                                 <img style="object-fit:contain;" src="/uploads/re-image/<%= image %>" alt="product image">
+                                                 <img style="object-fit:contain;" src="/uploads/product-images/<%= image %>" alt="product image">
                                              </div>
                                          <% }); %>
                                      <% } %>

@@ -53,6 +53,24 @@
     <% // Order Summary Section %>
     <div class="order-details-card mb-6">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
+        <div class="flex gap-3 mb-4">
+            <% const canCancelOrder = order.items.some(item => item.status !== 'cancelled' && item.status !== 'delivered' && item.status !== 'returned' && item.status !== 'return requested' && item.status !== 'return accepted' && item.status !== 'return rejected' && item.status !== 'refunded'); %>
+            <% const canReturnOrder = order.items.some(item => item.status === 'delivered'); %>
+            <button
+                class="btn btn-danger btn-sm"
+                onclick="cancelOrder('<%= order.orderID %>')"
+                <%= !canCancelOrder || order.status === 'cancelled' ? 'disabled' : '' %>
+            >
+                Cancel Order
+            </button>
+            <button
+                class="btn btn-warning btn-sm"
+                onclick="returnOrder('<%= order.orderID %>')"
+                <%= !canReturnOrder || order.status === 'returned' ? 'disabled' : '' %>
+            >
+                Return Order
+            </button>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <p class="text-gray-600 mb-2"><strong>Status:</strong>
@@ -146,7 +164,7 @@
         <% order.items.forEach(item => { %>
             <div class="order-details-card p-4 flex flex-col md:flex-row items-start md:items-center justify-between">
                 <div class="flex items-center mb-4 md:mb-0">
-                    <img src="/uploads/re-image/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>" class="item-image">
+                    <img src="/uploads/product-images/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>" class="item-image">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-800 mb-1"><%= item.product.productName %></h3>
                         <p class="text-gray-600 mb-1">Qty: <%= item.quantity %></p>
@@ -154,17 +172,39 @@
                         <% console.log('Item ID:', item._id, 'Item Name:', item.product.productName, 'Status:', item.status); %>
                         <p class="text-gray-600">Status:
                             <% let itemStatusClass = '';
+                               let itemStatusText = '';
                                switch(item.status) {
                                   case 'delivered':
-                                  case 'return accepted': itemStatusClass = 'bg-success'; break;
+                                    itemStatusClass = 'bg-success';
+                                    itemStatusText = 'Delivered';
+                                    break;
                                   case 'cancelled':
-                                  case 'return rejected': itemStatusClass = 'bg-danger'; break;
-                                  case 'return requested': itemStatusClass = 'bg-info'; break;
-                                  default: itemStatusClass = 'bg-warning';
+                                    itemStatusClass = 'bg-danger';
+                                    itemStatusText = 'Cancelled';
+                                    break;
+                                  case 'returned':
+                                    itemStatusClass = 'bg-success';
+                                    itemStatusText = 'Returned';
+                                    break;
+                                  case 'return requested':
+                                    itemStatusClass = 'bg-info';
+                                    itemStatusText = 'Return Pending';
+                                    break;
+                                  case 'return rejected':
+                                    itemStatusClass = 'bg-danger';
+                                    itemStatusText = 'Return Rejected';
+                                    break;
+                                  case 'return accepted':
+                                    itemStatusClass = 'bg-success';
+                                    itemStatusText = 'Return Accepted';
+                                    break;
+                                  default:
+                                    itemStatusClass = 'bg-warning';
+                                    itemStatusText = item.status.charAt(0).toUpperCase() + item.status.slice(1);
                                }
                             %>
                             <span class="status-badge <%= itemStatusClass %>">
-                                <%= item.status.charAt(0).toUpperCase() + item.status.slice(1).replace(' ', '-') %>
+                                <%= itemStatusText %>
                             </span>
                         </p>
                          <% if (item.status === 'cancelled' && item.cancellationReason) { %>
